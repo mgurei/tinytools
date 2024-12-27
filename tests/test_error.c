@@ -18,4 +18,6 @@ int main(void) {
          tt_error_to_string(TT_ERROR_INVALID_PARAM));
   printf("TT_ERROR_NULL_POINTER: %s\n",
          tt_error_to_string(TT_ERROR_NULL_POINTER));
+  printf("TT_ERROR_BUFFER_EMPTY: %s\n",
+         tt_error_to_string(TT_ERROR_BUFFER_EMPTY));
 }

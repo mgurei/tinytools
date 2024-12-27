@@ -1,0 +1,7 @@
+build/
+lib/
+cache/
+*.o
+*.a
+.ccls-cache/
+compile_commands.json

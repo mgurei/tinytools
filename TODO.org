@@ -12,16 +12,29 @@
 * Features
 ** Error: PARTIAL
 ** Ring Buffer: PARTIAL
-*** Is it thread safe?
 ** Mutex system: PARTIAL
+** Atomic Operations Module
+*** atomic_add, atomic_sub, atomic_compare_exchange
+** Thread API
+*** Platform-Independent thread creation/management
+*** Thread pooling capabilities
 ** Platform abstraction layer
 *** Abstract hardware specific ops
 *** Make mutex platform-specific when needed
 *** Basic timing and delay functions
 ** Logging system
+*** Thread-safe logging mechanism
+*** Different log levels - DEBUG, INFO, WARNING, ERROR
+*** Output formating and routing
 ** Memory Management
-*** Memory pool allocation
+*** Thread-safe memory pool allocation
+*** Memory fence ops
+*** Buffer management utilities
 *** Statistics tracking
 *** Leak detection in debug
+** Time Management
+*** Platform-indipendent time functions
+*** High-resolution timers
+*** Timeout utilies
 ** Fixed point math
 ** More....

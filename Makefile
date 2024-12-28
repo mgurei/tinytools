@@ -12,6 +12,11 @@ BUILD_DIR := build
 LIB_DIR := lib
 TEST_DIR := $(BUILD_DIR)/tests
 
+# Unity paths
+UNITY_ROOT := external/unity
+UNITY_SRC := $(UNITY_ROOT)/src/unity.c
+UNITY_INC := -I$(UNITY_ROOT)/src
+
 # Source files
 SRCS := $(wildcard src/*.c)
 OBJS := $(SRCS:src/%.c=$(BUILD_DIR)/%.o)
@@ -41,6 +46,9 @@ ifdef DEBUG
     CFLAGS += -g -DDEBUG
 endif
 
+# Test flags
+TEST_CFLAGS := $(CFLAGS) $(UNITY_INC) -I./tests
+
 # Targets
 .PHONY: all clean test
 
@@ -52,6 +60,10 @@ dirs:
 $(BUILD_DIR)/%.o: src/%.c
 	@echo "Compiling $<..."
 	@$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/unity.o: $(UNITY_SRC)
+	@echo "Compiling Unity..."
+	@$(CC) $(CFLAGS) $(UNITY_INC) -c $< -o $@
 
 $(LIB_DIR)/$(LIB_NAME): $(OBJS)
 	@echo "Creating library $@..."
@@ -70,9 +82,9 @@ test: dirs $(LIB_DIR)/$(LIB_NAME) $(TEST_BINS)
         fi; \
     done
 
-$(TEST_DIR)/%: tests/%.c $(LIB_DIR)/$(LIB_NAME)
+$(TEST_DIR)/%: tests/%.c $(BUILD_DIR)/unity.o $(LIB_DIR)/$(LIB_NAME)
 	@echo "Compiling test $<..."
-	@$(CC) $(CFLAGS) $< -L$(LIB_DIR) -l$(PROJECT) -o $@
+	@$(CC) $(TEST_CFLAGS) $< $(BUILD_DIR)/unity.o -L$(LIB_DIR) -l$(PROJECT) -o $@
 
 clean:
 	@echo "Cleaning up..."

@@ -1,0 +1,15 @@
+#+title: Todo
+#+author: Mihai Gurei <mihai.gurei@protonmail.com>
+
+* Build system Improvements
+** Add configuration options
+** Cross-compilation support
+** Test coverage support
+** Static Analysis integration
+* Features
+** Mutex system
+** Platform abstraction layer
+** Memory Management
+** Logging system
+** Fixed point math
+** More....

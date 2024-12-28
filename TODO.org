@@ -1,17 +1,27 @@
 #+title: Todo
 #+author: Mihai Gurei <mihai.gurei@protonmail.com>
 
+* TODO: Errors to be fixed
+
 * Build system Improvements
 ** Add configuration options
 ** Cross-compilation support
 ** Test coverage support
 ** Static Analysis integration
+
 * Features
 ** Error: PARTIAL
 ** Ring Buffer: PARTIAL
+*** Is it thread safe?
 ** Mutex system: PARTIAL
 ** Platform abstraction layer
-** Memory Management
+*** Abstract hardware specific ops
+*** Make mutex platform-specific when needed
+*** Basic timing and delay functions
 ** Logging system
+** Memory Management
+*** Memory pool allocation
+*** Statistics tracking
+*** Leak detection in debug
 ** Fixed point math
 ** More....

@@ -7,7 +7,6 @@
  */
 
 #include "tt_mutex.h"
-#include "tt_error.h"
 #include <stddef.h>
 
 /* Initial lock value */

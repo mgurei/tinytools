@@ -8,49 +8,91 @@
 #include "tt_error.h"
 #include <stddef.h>
 
-#ifndef TT_USE_THREADING
-#include "tt_mutex.h"
-static tt_mutex_t error_mutex;
-#endif
-
-static tt_error_t last_error = TT_SUCCESS;
-static void (*error_callback)(tt_error_t) = NULL;
+static tt_error_context_t error_ctx = {
+    .last_error = TT_SUCCESS, .callback = NULL, .initialized = false};
 
 tt_error_t tt_error_init(void) {
-#ifdef TT_USE_THREADING
-  tt_error_t result = tt_mutex_init(&error_mutex);
+  if (error_ctx.initialized) {
+    return TT_SUCCESS;
+  }
+
+  tt_error_t result = tt_mutex_init(&error_ctx.mutex);
   if (result != TT_SUCCESS) {
     return result;
   }
-#endif
-  last_error = TT_SUCCESS;
-  error_callback = NULL;
+
+  error_ctx.last_error = TT_SUCCESS;
+  error_ctx.callback = NULL;
+  error_ctx.initialized = true;
+
+  return TT_SUCCESS;
+}
+
+tt_error_t tt_error_deinit(void) {
+  if (!error_ctx.initialized) {
+    return TT_ERROR_NOT_INITIALIZED;
+  }
+
+  tt_error_t result = tt_mutex_lock(&error_ctx.mutex);
+  if (result != TT_SUCCESS) {
+    return result;
+  }
+
+  error_ctx.callback = NULL;
+  error_ctx.initialized = false;
+
+  result = tt_mutex_unlock(&error_ctx.mutex);
+  if (result != TT_SUCCESS) {
+    return result;
+  }
+
   return TT_SUCCESS;
 }
 
 tt_error_t tt_error_get_last(void) {
+  if (!error_ctx.initialized) {
+    return TT_ERROR_NOT_INITIALIZED;
+  }
+
   tt_error_t error;
-#ifdef TT_USE_THREADING
-  tt_mutex_lock(&error_mutex);
-#endif
-  error = last_error;
-#ifdef TT_USE_THREADING
-  tt_mutex_unlock(&error_mutex);
-#endif
+  tt_error_t result = tt_mutex_lock(&error_ctx.mutex);
+  if (result != TT_SUCCESS) {
+    return result;
+  }
+
+  error = error_ctx.last_error;
+
+  result = tt_mutex_unlock(&error_ctx.mutex);
+  if (result != TT_SUCCESS) {
+    return result;
+  }
+
   return error;
 }
 
-void tt_error_set_last(tt_error_t error) {
-#ifdef TT_USE_THREADING
-  tt_mutex_lock(&error_mutex);
-#endif
-  last_error = error;
-  if (error_callback != NULL && error != TT_SUCCESS) {
-    error_callback(error);
+tt_error_t tt_error_set_last(tt_error_t error) {
+  if (!error_ctx.initialized) {
+    return TT_ERROR_NOT_INITIALIZED;
   }
-#ifdef TT_USE_THREADING
-  tt_mutex_unlock(&error_mutex);
-#endif
+
+  tt_error_t result = tt_mutex_lock(&error_ctx.mutex);
+  if (result != TT_SUCCESS) {
+    return result;
+  }
+
+  error_ctx.last_error = error;
+  void (*callback)(tt_error_t) = error_ctx.callback;
+
+  result = tt_mutex_unlock(&error_ctx.mutex);
+  if (result != TT_SUCCESS) {
+    return result;
+  }
+
+  if (callback != NULL && error != TT_SUCCESS) {
+    callback(error);
+  }
+
+  return TT_SUCCESS;
 }
 
 const char *tt_error_to_string(tt_error_t error) {
@@ -75,6 +117,8 @@ const char *tt_error_to_string(tt_error_t error) {
     return "Not initialized";
   case TT_ERROR_PLATFORM_SPECIFIC:
     return "Platform specific error";
+  case TT_ERROR_MUTEX_ERROR:
+    return "Mutex operation failed";
   default:
     return "Unknown error";
   }
@@ -82,19 +126,24 @@ const char *tt_error_to_string(tt_error_t error) {
 
 bool tt_error_is_success(void) { return tt_error_get_last() == TT_SUCCESS; }
 
-void tt_error_clear(void) { tt_error_set_last(TT_SUCCESS); }
+tt_error_t tt_error_clear(void) { return tt_error_set_last(TT_SUCCESS); }
 
 tt_error_t tt_error_register_callback(void (*callback)(tt_error_t)) {
-  if (callback == NULL) {
-    return TT_ERROR_NULL_POINTER;
+  if (!error_ctx.initialized) {
+    return TT_ERROR_NOT_INITIALIZED;
   }
 
-#ifdef TT_USE_THREADING
-  tt_mutex_lock(&error_mutex);
-#endif
-  error_callback = callback;
-#ifdef TT_USE_THREADING
-  tt_mutex_unlock(&error_mutex);
-#endif
+  tt_error_t result = tt_mutex_lock(&error_ctx.mutex);
+  if (result != TT_SUCCESS) {
+    return result;
+  }
+
+  error_ctx.callback = callback;
+
+  result = tt_mutex_unlock(&error_ctx.mutex);
+  if (result != TT_SUCCESS) {
+    return result;
+  }
+
   return TT_SUCCESS;
 }

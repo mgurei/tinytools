@@ -9,17 +9,15 @@
 #ifndef TT_MUTEX_H_
 #define TT_MUTEX_H_
 
-#include "tt_error.h"
-#include <stdbool.h>
+#include "tt_types.h"
 #include <stddef.h>
-#include <stdint.h>
 
 /**
  * @brief Mutex structure for thread synchronization
  */
 typedef struct {
   volatile int lock; /**< Atomic lock value*/
-  bool initialized;  /**< Initializatio state*/
+  bool initialized;  /**< Initialization state*/
 } tt_mutex_t;
 
 /**

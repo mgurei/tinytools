@@ -6,3 +6,4 @@ lib/
 .ccls-cache/
 compile_commands.json
 .projectile
+.dir-locals.el

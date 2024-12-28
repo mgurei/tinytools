@@ -9,29 +9,30 @@
 #ifndef TT_ERROR_H_
 #define TT_ERROR_H_
 
-#include <stdbool.h>
-#include <stdint.h>
+#include "tt_mutex.h"
+#include "tt_types.h"
 
-typedef enum {
-  TT_SUCCESS = 0,             /**< Operation completed successfully*/
-  TT_ERROR_NULL_POINTER,      /**< Null pointer was passed*/
-  TT_ERROR_INVALID_PARAM,     /**< Invalid parameter value*/
-  TT_ERROR_BUFFER_FULL,       /**< Buffer is full */
-  TT_ERROR_BUFFER_EMPTY,      /**< Buffer is empy*/
-  TT_ERROR_OUT_OF_MEMORY,     /**< Memory allocation failed*/
-  TT_ERROR_TIMEOUT,           /**< Operation timed out*/
-  TT_ERROR_BUSY,              /**< Resource is busy*/
-  TT_ERROR_NOT_INITIALIZED,   /**< Module not initialized*/
-  TT_ERROR_PLATFORM_SPECIFIC, /**< Platform-specific error*/
-  TT_ERROR_UNKNOWN,           /**< Unknown error occured*/
-  // Add more error codes as needed
-} tt_error_t;
+/**
+ * @brief Error context structure
+ */
+typedef struct {
+  tt_error_t last_error;        /**< Last error occured*/
+  void (*callback)(tt_error_t); /**< Error callback function*/
+  tt_mutex_t mutex;             /**< Mutex for thread safety*/
+  bool initialized;             /**< Initialization state*/
+} tt_error_context_t;
 
 /**
  * @brief Initialize the error handling system
  * @return TT_SUCCESS if initialized successfully
  */
 tt_error_t tt_error_init(void);
+
+/**
+ * @brief Deinitialize the error handling system
+ * @return TT_SUCCESS if deinitialized successfully, error code otherwise
+ */
+tt_error_t tt_error_deinit(void);
 
 /**
  * @brief Get the last error that occured
@@ -42,8 +43,9 @@ tt_error_t tt_error_get_last(void);
 /**
  * @brief Set the last error code
  * @param error Error code to convert
+ * @return TT_SUCCESS if set successfully, error code otherwise
  */
-void tt_error_set_last(tt_error_t error);
+tt_error_t tt_error_set_last(tt_error_t error);
 
 /**
  * @brief Convert error code to string
@@ -60,13 +62,15 @@ bool tt_error_is_success(void);
 
 /**
  * @brief Clear last error
+ * @return TT_SUCCESS if cleared successfully, error code otherwise
  */
-void tt_error_clear(void);
+tt_error_t tt_error_clear(void);
 
 /**
  * @brief Register a callback for error handling
  * @param callback Function pointer to error handle
- * @return TT_SUCCESS if callback was register successfully
+ * @return TT_SUCCESS if callback was register successfully, error code
+ * otherwise
  */
 tt_error_t tt_error_register_callback(void (*callback)(tt_error_t));
 

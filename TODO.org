@@ -15,8 +15,16 @@
 ** Mutex system: PARTIAL
 ** Atomic Operations Module: PARTIAL
 *** atomic_add, atomic_sub, atomic_compare_exchange: COMPLETE
-** Thread API
-*** Platform-Independent thread creation/management
+** Thread API: PARTIAL
+*** Platform-Independent thread creation/management: PARTIAL
+**** Linux: PARTIAL
+***** Thread suspension?
+***** thread lookup table implementation
+**** Arduino: PARTIAL
+**** Raspberry
+**** RTOS: PARTIAL
+**** bare-metal
+**** Windows?
 *** Thread pooling capabilities
 ** Platform abstraction layer
 *** Abstract hardware specific ops

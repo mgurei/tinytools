@@ -107,7 +107,7 @@ const char *tt_error_to_string(tt_error_t error) {
     return "Buffer full";
   case TT_ERROR_BUFFER_EMPTY:
     return "Buffer empty";
-  case TT_ERROR_OUT_OF_MEMORY:
+  case TT_ERROR_MEMORY:
     return "Memory allocation failed";
   case TT_ERROR_TIMEOUT:
     return "Operation timed out";
@@ -119,6 +119,17 @@ const char *tt_error_to_string(tt_error_t error) {
     return "Platform specific error";
   case TT_ERROR_MUTEX_ERROR:
     return "Mutex operation failed";
+  case TT_ERROR_THREAD_CREATE:
+    return "Fail to create thread";
+  case TT_ERROR_THREAD_JOIN:
+    return "Fail to join thread";
+  case TT_ERROR_THREAD_PRIORITY:
+    return "Fail to set thread priority";
+  case TT_ERROR_THREAD_SLEEP:
+    return "Fail to set thread to sleep";
+
+  case TT_ERROR_NOT_IMPLEMENTED:
+    return "Feature not implemented";
   default:
     return "Unknown error";
   }

@@ -2,12 +2,12 @@
  * @file test_ringbuf.c
  * @brief Test ring buffer functionality
  * @author mgurei
- * @date 2024-12-27
+ * @date 2024-12-29
  */
 
 #include "tt_error.h"
 #include "tt_ringbuf.h"
-#include "unity.h"
+#include "tt_test.h"
 #include <stdint.h>
 #include <stdio.h>
 
@@ -16,7 +16,6 @@ static tt_ringbuf_t rb;
 static uint8_t buffer[16];
 tt_error_t err;
 
-/* These functions must be defined even if empty */
 void setUp(void) {
   // Initialize
   err = tt_ringbuf_init(&rb, buffer, BUFFER_SIZE);
@@ -29,38 +28,45 @@ void tearDown(void) {
   // Optional: Clean up after each test
 }
 
-void test_buffer_initial_state(void) {
-  TEST_ASSERT_TRUE(tt_ringbuf_is_empty(&rb));
-  TEST_ASSERT_FALSE(tt_ringbuf_is_full(&rb));
+TT_TEST(test_buffer_initial_state) {
+  TT_ASSERT(tt_ringbuf_is_empty(&rb));
+  TT_ASSERT(!tt_ringbuf_is_full(&rb));
+  return true;
 }
 
-void test_buffer_write_read(void) {
+TT_TEST(test_buffer_write_read) {
   uint8_t test_data = 0x42;
   uint8_t read_data;
 
-  TEST_ASSERT_EQUAL(TT_SUCCESS, tt_ringbuf_write(&rb, test_data));
-  TEST_ASSERT_FALSE(tt_ringbuf_is_empty(&rb));
+  TT_ASSERT_EQUAL(TT_SUCCESS, tt_ringbuf_write(&rb, test_data), "%d");
+  TT_ASSERT(!tt_ringbuf_is_empty(&rb));
 
-  TEST_ASSERT_EQUAL(TT_SUCCESS, tt_ringbuf_read(&rb, &read_data));
-  TEST_ASSERT_EQUAL(test_data, read_data);
-  TEST_ASSERT_TRUE(tt_ringbuf_is_empty(&rb));
+  TT_ASSERT_EQUAL(TT_SUCCESS, tt_ringbuf_read(&rb, &read_data), "%d");
+  TT_ASSERT_EQUAL(test_data, read_data, "0x%02X");
+  TT_ASSERT(tt_ringbuf_is_empty(&rb));
+  return true;
 }
 
-void test_buffer_full(void) {
+TT_TEST(test_buffer_full) {
   // Fill the buffer
   for (size_t i = 0; i < sizeof(buffer); i++) {
-    TEST_ASSERT_EQUAL(TT_SUCCESS, tt_ringbuf_write(&rb, (uint8_t)i));
+    TT_ASSERT_EQUAL(TT_SUCCESS, tt_ringbuf_write(&rb, (uint8_t)i), "%d");
   }
 
-  TEST_ASSERT_TRUE(tt_ringbuf_is_full(&rb));
-  TEST_ASSERT_EQUAL(TT_ERROR_BUFFER_FULL, tt_ringbuf_write(&rb, 0xFF));
+  TT_ASSERT(tt_ringbuf_is_full(&rb));
+  TT_ASSERT_EQUAL(TT_ERROR_BUFFER_FULL, tt_ringbuf_write(&rb, 0xFF), "%d");
+  return true;
 }
 
 int main(void) {
-  UNITY_BEGIN();
-  RUN_TEST(test_buffer_initial_state);
-  RUN_TEST(test_buffer_write_read);
-  RUN_TEST(test_buffer_full);
+  TT_TEST_START("Ring Buffer Test Suite");
 
-  return UNITY_END();
+  TT_SET_FIXTURES(setUp, tearDown);
+
+  TT_RUN_TEST(test_buffer_initial_state);
+  TT_RUN_TEST(test_buffer_write_read);
+  TT_RUN_TEST(test_buffer_full);
+
+  TT_TEST_END();
+  return 0;
 }

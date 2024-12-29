@@ -25,7 +25,6 @@ make clean
 ## Requirements
 - C11 compatible compiler
 - Make build system
-- Unity test framework (include as submodule)
 
 ## Contributing
 While contributing is welcome, I am doing this as self-education, what I wish more for is suggestions. Feel free to submit a Pull Request.

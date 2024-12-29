@@ -5,6 +5,7 @@
  * @brief
  * @copyright Copyright (c) 2024 AnAlphaBeta. All rights reserved.
  */
+#define _POSIX_C_SOURCE 199309L
 
 #include "tt_thread.h"
 #include "tt_atomic.h"
@@ -132,7 +133,7 @@ tt_error_t tt_thread_create(tt_thread_t **thread, const tt_thread_attr_t *attr,
   new_thread->func = func;
   new_thread->arg = arg;
   new_thread->attrs = attr ? *attr : default_attrs;
-  tt_atomic_init(&new_thread, TT_THREAD_STATE_CREATED);
+  tt_atomic_init(&new_thread->state, TT_THREAD_STATE_CREATED);
 
 #if defined(TT_PLATFORM_LINUX)
   pthread_attr_t pthread_attr;
@@ -206,7 +207,7 @@ tt_error_t tt_thread_join(tt_thread_t *thread, void **retval) {
 
 tt_error_t tt_thread_get_state(const tt_thread_t *thread,
                                tt_thread_state_t *state) {
-  if (thread == NULL || state = NULL) {
+  if (thread == NULL || state == NULL) {
     return TT_ERROR_NULL_POINTER;
   }
 
@@ -275,7 +276,7 @@ tt_error_t tt_thread_resume(tt_thread_t *thread) {
 
 tt_error_t tt_thread_sleep(uint32_t ms) {
 #if defined(TT_PLATFORM_LINUX)
-  struct timespecs ts;
+  struct timespec ts;
   ts.tv_sec = ms / 1000;
   ts.tv_nsec = (ms % 1000) / 1000000;
   return (nanosleep(&ts, NULL) == 0) ? TT_SUCCESS : TT_ERROR_THREAD_SLEEP;
@@ -289,7 +290,7 @@ tt_error_t tt_thread_sleep(uint32_t ms) {
 
 tt_thread_t *tt_thread_self(void) {
 #if defined(TT_PLATFORM_LINUX)
-  pthread_t self = pthread_self();
+  (void)pthread_self(); // NOTE: warning suppression until completed
   // NOTE: This needs a thread lookup table implementation
   return NULL; // TODO: Temporary until lookup table is implemented
 #elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS)

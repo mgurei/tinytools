@@ -31,7 +31,7 @@ tt_error_t tt_atomic_init(tt_atomic_int_t *atomic, int32_t value) {
   return TT_SUCCESS;
 }
 
-int32_t tt_atomic_load(tt_atomic_int_t *atomic, tt_memory_order_t order) {
+int32_t tt_atomic_load(const tt_atomic_int_t *atomic, tt_memory_order_t order) {
   if (atomic == NULL) {
     return TT_ERROR_NULL_POINTER;
   }

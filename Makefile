@@ -50,20 +50,20 @@ TEST_CFLAGS := $(CFLAGS) -I./tests
 all: dirs $(LIB_DIR)/$(LIB_NAME)
 
 dirs:
-    @mkdir -p $(BUILD_DIR) $(LIB_DIR) $(TEST_DIR)
+	@mkdir -p $(BUILD_DIR) $(LIB_DIR) $(TEST_DIR)
 
 $(BUILD_DIR)/%.o: src/%.c
-    @echo "Compiling $<..."
-    @$(CC) $(CFLAGS) -c $< -o $@
+	@echo "Compiling $<..."
+	@$(CC) $(CFLAGS) -c $< -o $@
 
 $(LIB_DIR)/$(LIB_NAME): $(OBJS)
-    @echo "Creating library $@..."
-    @$(AR) $(ARFLAGS) $@ $^
+	@echo "Creating library $@..."
+	@$(AR) $(ARFLAGS) $@ $^
 
 # Test targets
 test: dirs $(LIB_DIR)/$(LIB_NAME) $(TEST_BINS)
-    @echo "Running tests..."
-    @for test in $(TEST_BINS); do \
+	@echo "Running tests..."
+	@for test in $(TEST_BINS); do \
         echo "Running $${test#$(TEST_DIR)/}..."; \
         if $$test; then \
             echo "PASS: $${test#$(TEST_DIR)/}"; \
@@ -74,23 +74,23 @@ test: dirs $(LIB_DIR)/$(LIB_NAME) $(TEST_BINS)
     done
 
 $(TEST_DIR)/%: tests/%.c $(LIB_DIR)/$(LIB_NAME)
-    @echo "Compiling test $<..."
-    @$(CC) $(TEST_CFLAGS) $< -L$(LIB_DIR) -l$(PROJECT) -o $@
+	@echo "Compiling test $<..."
+	@$(CC) $(TEST_CFLAGS) $< -L$(LIB_DIR) -l$(PROJECT) -o $@
 
 clean:
-    @echo "Cleaning up..."
-    @rm -rf $(BUILD_DIR) $(LIB_DIR)
+	@echo "Cleaning up..."
+	@rm -rf $(BUILD_DIR) $(LIB_DIR)
 
 # Show help
 help:
-    @echo "Available targets:"
-    @echo "  all      - Build the library (default)"
-    @echo "  test     - Build and run tests"
-    @echo "  clean    - Remove build artifacts"
-    @echo "  help     - Show this help message"
-    @echo "\nAvailable platforms:"
-    @echo "  linux    - Build for Linux (default)"
-    @echo "  raspberry- Build for Raspberry Pi"
-    @echo "  arduino  - Build for Arduino"
-    @echo "\nOptions:"
-    @echo "  DEBUG=1  - Enable debug build"
+	@echo "Available targets:"
+	@echo "  all      - Build the library (default)"
+	@echo "  test     - Build and run tests"
+	@echo "  clean    - Remove build artifacts"
+	@echo "  help     - Show this help message"
+	@echo "\nAvailable platforms:"
+	@echo "  linux    - Build for Linux (default)"
+	@echo "  raspberry- Build for Raspberry Pi"
+	@echo "  arduino  - Build for Arduino"
+	@echo "\nOptions:"
+	@echo "  DEBUG=1  - Enable debug build"

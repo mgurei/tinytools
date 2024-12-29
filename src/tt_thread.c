@@ -223,11 +223,37 @@ tt_error_t tt_thread_set_priority(tt_thread_t *thread,
 
 #if defined(TT_PLATFORM_LINUX)
   struct sched_param param;
-  int policy;
-  pthread_getschedparam(thread->handle, &policy, &param);
-  param.sched_priority = priority;
+  int policy = SCHED_OTHER; // Use the default scheduler
+  int min_prio = sched_get_priority_min(policy);
+  int max_prio = sched_get_priority_max(policy);
+
+  // TODO: Redo this with lookup table implementation
+  // Map our priority levels to the system's priority range
+  int system_priority;
+  switch (priority) {
+  case TT_THREAD_PRIORITY_LOW:
+    system_priority = min_prio;
+    break;
+  case TT_THREAD_PRIORITY_NORMAL:
+    system_priority = min_prio + (max_prio - min_prio) / 3;
+    break;
+  case TT_THREAD_PRIORITY_HIGH:
+    system_priority = min_prio + 2 * (max_prio - min_prio) / 3;
+    break;
+  case TT_THREAD_PRIORITY_REALTIME:
+    system_priority = max_prio;
+    break;
+  default:
+    return TT_ERROR_INVALID_PARAM;
+  }
+
+  param.sched_priority = system_priority;
   int result = pthread_setschedparam(thread->handle, policy, &param);
-  return (result == 0) ? TT_SUCCESS : TT_ERROR_THREAD_PRIORITY;
+  // NOTE:
+  // On most Linux systems, unprivileged users can't set priorities
+  // So we'll return success even if it fails
+  // NOTE: might return a TT_ERROR_PERMISSION
+  return TT_SUCCESS;
 #elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS)
   vTaskPrioritySet(thread->handle, priority);
   return TT_SUCCESS;

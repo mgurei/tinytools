@@ -18,6 +18,7 @@
 #define ATOMIC_SUB(ptr, val, order) __atomic_fetch_sub(ptr, val, order)
 #define ATOMIC_CAS(ptr, expected, desired, order)                              \
   __atomic_compare_exchange_n(ptr, expected, desired, false, order, order)
+#define ATOMIC_THREAD_FENCE(order) __atomic_thread_fence(order)
 #else
 #error "Unsupported compiler for atomic operations"
 #endif
@@ -75,4 +76,8 @@ bool tt_atomic_compare_exchange(tt_atomic_int_t *atomic, int32_t *expected,
   }
 
   return ATOMIC_CAS(&atomic->value, expected, desired, order);
+}
+
+void tt_atomic_thread_fence(tt_memory_order_t order) {
+  ATOMIC_THREAD_FENCE(order);
 }

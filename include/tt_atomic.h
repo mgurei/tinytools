@@ -89,4 +89,10 @@ int32_t tt_atomic_sub(tt_atomic_int_t *atomic, int32_t value,
 bool tt_atomic_compare_exchange(tt_atomic_int_t *atomic, int32_t *expected,
                                 int32_t desired, tt_memory_order_t order);
 
+/**
+ * @brief Memory fence operation
+ * @param order Memory ordering constraint
+ */
+void tt_atomic_thread_fence(tt_memory_order_t order);
+
 #endif // TT_ATOMIC_H_

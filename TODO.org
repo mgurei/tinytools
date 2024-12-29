@@ -13,8 +13,8 @@
 ** Error: PARTIAL
 ** Ring Buffer: PARTIAL
 ** Mutex system: PARTIAL
-** Atomic Operations Module
-*** atomic_add, atomic_sub, atomic_compare_exchange
+** Atomic Operations Module: PARTIAL
+*** atomic_add, atomic_sub, atomic_compare_exchange: COMPLETE
 ** Thread API
 *** Platform-Independent thread creation/management
 *** Thread pooling capabilities

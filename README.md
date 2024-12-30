@@ -22,6 +22,8 @@ make test
 # Clean build artifacts
 make clean
 
+```
+
 ## Requirements
 - C11 compatible compiler
 - Make build system

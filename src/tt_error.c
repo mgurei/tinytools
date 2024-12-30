@@ -6,6 +6,7 @@
  */
 
 #include "tt_error.h"
+#include "tt_types.h"
 #include <stddef.h>
 
 static tt_error_context_t error_ctx = {
@@ -127,6 +128,10 @@ const char *tt_error_to_string(tt_error_t error) {
     return "Fail to set thread priority";
   case TT_ERROR_THREAD_SLEEP:
     return "Fail to set thread to sleep";
+  case TT_ERROR_NOT_FOUND:
+    return "Resource not found";
+  case TT_ERROR_THREAD_ACTIVE:
+    return "Fail to destroy a thread";
 
   case TT_ERROR_NOT_IMPLEMENTED:
     return "Feature not implemented";

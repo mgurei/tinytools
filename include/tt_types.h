@@ -28,13 +28,15 @@ typedef enum {
   TT_ERROR_NOT_INITIALIZED,   /**< Module not initialized*/
   TT_ERROR_PLATFORM_SPECIFIC, /**< Platform-specific error*/
   TT_ERROR_MUTEX_ERROR,       /**< Mutex operation failed*/
-  TT_ERROR_UNKNOWN,           /**< Unknown error occured*/
+  TT_ERROR_NOT_FOUND,         /**< Resource not found*/
   TT_ERROR_THREAD_CREATE,     /**< Fail to create thread*/
   TT_ERROR_THREAD_JOIN,       /**< Fail to join thread*/
   TT_ERROR_THREAD_PRIORITY,   /**< Fail to set thread priority */
   TT_ERROR_THREAD_SLEEP,      /**< Fail to set thread to sleep*/
+  TT_ERROR_THREAD_ACTIVE,     /**< Fail to destroy a thread*/
 
   TT_ERROR_NOT_IMPLEMENTED, /**< Feature not implemented*/
+  TT_ERROR_UNKNOWN,         /**< Unknown error occured*/
   // Add more error codes as needed
 } tt_error_t;
 

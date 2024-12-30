@@ -5,12 +5,14 @@
  * @brief
  * @copyright Copyright (c) 2024 AnAlphaBeta. All rights reserved.
  */
+#include <bits/pthreadtypes.h>
 #define _POSIX_C_SOURCE 199309L
 
-#include "tt_thread.h"
 #include "tt_atomic.h"
+#include "tt_thread.h"
+#include "tt_thread_internal.h"
 #include "tt_types.h"
-#include <bits/pthreadtypes.h>
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -36,29 +38,6 @@
 #define TT_PLATFORM_BARE
 #endif
 
-struct tt_thread_t {
-#if defined(TT_PLATFORM_LINUX)
-  pthread_t handle;
-
-#elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS)
-  TaskHandle_t handle;
-  StaticTask_t *task_buffer;
-  StackType_t *stack_buffer;
-
-#else
-  /* Bare metal implementation */
-  void *stack_ptr;
-  size_t stack_size;
-  volatile uint32_t *context;
-#endif
-
-  tt_thread_func_t func;
-  void *arg;
-  tt_atomic_int_t state;
-  tt_thread_attr_t attrs;
-  void *retval;
-};
-
 /* Default stack size for different platforms */
 #if defined(TT_PLATFORM_ARDUINO)
 #define TT_DEFAULT_STACK_SIZE (configMININAL_STACK_SIZE * 2)
@@ -75,6 +54,8 @@ static const tt_thread_attr_t default_attrs = {
     .priority = TT_THREAD_PRIORITY_NORMAL,
     .stack_size = TT_DEFAULT_STACK_SIZE,
     .name = "tt_thread"};
+
+tt_error_t tt_thread_init(void) { return tt_thread_table_init(); }
 
 tt_error_t tt_thread_attr_init(tt_thread_attr_t *attr) {
   if (attr == NULL) {
@@ -109,13 +90,11 @@ static void *thread_start_routine(void *arg) {
     return NULL;
   }
 
-  tt_atomic_store(&thread->state, TT_THREAD_STATE_RUNNING,
-                  TT_MEMORY_ORDER_RELEASE);
+  thread->state = TT_THREAD_STATE_RUNNING;
   thread->retval = thread->func(thread->arg);
-  tt_atomic_store(&thread->state, TT_THREAD_STATE_TERMINATED,
-                  TT_MEMORY_ORDER_RELEASE);
+  thread->state = TT_THREAD_STATE_TERMINATED;
 
-  return NULL;
+  return thread->retval;
 }
 #endif
 
@@ -132,52 +111,69 @@ tt_error_t tt_thread_create(tt_thread_t **thread, const tt_thread_attr_t *attr,
 
   new_thread->func = func;
   new_thread->arg = arg;
-  new_thread->attrs = attr ? *attr : default_attrs;
-  tt_atomic_init(&new_thread->state, TT_THREAD_STATE_CREATED);
+  new_thread->state = TT_THREAD_STATE_CREATED;
+  new_thread->is_active = true;
+  new_thread->stack_size = attr ? attr->stack_size : default_attrs.stack_size;
+  new_thread->priority = attr ? attr->priority : default_attrs.priority;
+  new_thread->name = attr ? attr->name : default_attrs.name;
 
 #if defined(TT_PLATFORM_LINUX)
   pthread_attr_t pthread_attr;
   pthread_attr_init(&pthread_attr);
 
-  if (new_thread->attrs.stack_size > 0) {
-    pthread_attr_setstacksize(&pthread_attr, new_thread->attrs.stack_size);
+  if (new_thread->stack_size > 0) {
+    pthread_attr_setstacksize(&pthread_attr, new_thread->stack_size);
   }
 
-  int result = pthread_create(&new_thread->handle, &pthread_attr,
-                              thread_start_routine, new_thread);
-
-  pthread_attr_destroy(&pthread_attr);
-
-  if (result != 0) {
+  pthread_t *handle = (pthread_t *)malloc(sizeof(pthread_t));
+  if (handle == NULL) {
     free(new_thread);
-    return TT_ERROR_THREAD_CREATE;
-  }
-#elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS)
-  new_thread->stack_buffer =
-      (StackType_t *)malloc(new_thread->attrs.stack_size * sizeof(StackType_t));
-  new_thread->task_buffer = (StaticTask_t *)malloc(sizeof(StaticTask_t));
-
-  if (new_thread->stack_buffer == NULL || new_thread->task_buffer == NULL) {
-    free(new_thread->stack_buffer);
-    free(new_thread->task_buffer);
-    free(new_thread);
+    pthread_attr_destroy(&pthread_attr);
     return TT_ERROR_MEMORY;
   }
 
-  new_thread->handle = xTaskCreateStatic(
-      thread_start_routine, new_thread->attrs.name,
-      new_thread->attrs.stack_size, new_thread, new_thread->attrs.priority,
-      new_thread->stack_buffer, new_thread->task_buffer);
+  int result =
+      pthread_create(handle, &pthread_attr, thread_start_routine, new_thread);
+  pthread_attr_destroy(&pthread_attr);
 
-  if (new_thread->handle == NULL) {
-    free(new_thread->stack_buffer);
-    free(new_thread->task_buffer);
+  if (result != 0) {
+    free(handle);
     free(new_thread);
     return TT_ERROR_THREAD_CREATE;
   }
+
+  new_thread->handle = (platform_thread_handle_t)handle;
+
+#elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS)
+  TaskHandle_t task_handle = NULL;
+  BaseType_t result = xTaskCreate(
+      thread_start_routine, attr ? attr->name : "tt_thread",
+      attr ? attr->stack_size : TT_DEFAULT_STACK_SIZE, new_thread,
+      attr ? attr->priority : TT_THREAD_PRIORITY_NORMALE, &task_handle);
+
+  if (result != pdPASS || task_handle == NULL) {
+    free(new_thread);
+    return TT_ERROR_THREAD_CREATE;
+  }
+
+  new_thread->handle = (platform_thread_handle_t)task_handle;
 #else
   return TT_ERROR_NOT_IMPLEMENTED;
 #endif
+
+  // Register the thread in the thread table
+  tt_error_t reg_result = tt_thread_table_register(new_thread);
+  if (reg_result != TT_SUCCESS) {
+#if defined(TT_PLATFORM_LINUX)
+    pthread_t *pthread_handle = (pthread_t *)new_thread->handle;
+    pthread_detach(*pthread_handle);
+    free(pthread_handle);
+#elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS)
+    vTaskDelete((TaskHandle_t)new_thread->handle);
+#endif
+    free(new_thread);
+    return reg_result;
+  }
 
   *thread = new_thread;
   return TT_SUCCESS;
@@ -189,11 +185,11 @@ tt_error_t tt_thread_join(tt_thread_t *thread, void **retval) {
   }
 
 #if defined(TT_PLATFORM_LINUX)
-  int result = pthread_join(thread->handle, retval);
+  pthread_t *pthread_handle = (pthread_t *)thread->handle;
+  int result = pthread_join(*pthread_handle, retval);
   return (result == 0) ? TT_SUCCESS : TT_ERROR_THREAD_JOIN;
 #elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS)
-  while (tt_atomic_load(&thread->state, TT_MEMORY_ORDER_ACQUIRE) !=
-         TT_THREAD_STATE_TERMINATED) {
+  while (thread->state != TT_THREAD_STATE_TERMINATED) {
     vTaskDelay(1);
   }
   if (retval) {
@@ -211,7 +207,7 @@ tt_error_t tt_thread_get_state(const tt_thread_t *thread,
     return TT_ERROR_NULL_POINTER;
   }
 
-  *state = tt_atomic_load(&thread->state, TT_MEMORY_ORDER_ACQUIRE);
+  *state = thread->state;
   return TT_SUCCESS;
 }
 
@@ -248,14 +244,14 @@ tt_error_t tt_thread_set_priority(tt_thread_t *thread,
   }
 
   param.sched_priority = system_priority;
-  int result = pthread_setschedparam(thread->handle, policy, &param);
-  // NOTE:
-  // On most Linux systems, unprivileged users can't set priorities
-  // So we'll return success even if it fails
-  // NOTE: might return a TT_ERROR_PERMISSION
+  pthread_t *pthread_handle = (pthread_t *)thread->handle;
+  pthread_setschedparam(*pthread_handle, policy, &param);
+  thread->priority = priority;
   return TT_SUCCESS;
+
 #elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS)
   vTaskPrioritySet(thread->handle, priority);
+  thread->priority = priority;
   return TT_SUCCESS;
 #else
   return TT_ERROR_NOT_IMPLEMENTED;
@@ -273,8 +269,7 @@ tt_error_t tt_thread_suspend(tt_thread_t *thread) {
   return TT_ERROR_NOT_IMPLEMENTED;
 #elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS)
   vTaskSuspend(thread_handle->handle);
-  tt_atomic_store(&thread->state, TT_THREAD_STATE_SUSPEND,
-                  TT_MEMORY_ORDER_RELEASE);
+  thread->state = TT_THREAD_STATE_SUSPENDED;
   return TT_SUCCESS;
 #else
   return TT_ERROR_NOT_IMPLEMENTED;
@@ -292,8 +287,7 @@ tt_error_t tt_thread_resume(tt_thread_t *thread) {
   return TT_ERROR_NOT_IMPLEMENTED;
 #elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS)
   vTaskResume(thread_handle->handle);
-  tt_atomic_store(&thread->state, TT_THREAD_STATE_RUNNING,
-                  TT_MEMORY_ORDER_RELEASE);
+  thread->state = TT_THREAD_STATE_RUNNING;
   return TT_SUCCESS;
 #else
   return TT_ERROR_NOT_IMPLEMENTED;
@@ -306,7 +300,7 @@ tt_error_t tt_thread_sleep(uint32_t ms) {
   ts.tv_sec = ms / 1000;
   ts.tv_nsec = (ms % 1000) / 1000000;
   return (nanosleep(&ts, NULL) == 0) ? TT_SUCCESS : TT_ERROR_THREAD_SLEEP;
-#elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS) #else
+#elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS)
   vTaskDelay(pdMS_TO_TICKS(ms));
   return TT_SUCCESS;
 #else
@@ -316,13 +310,11 @@ tt_error_t tt_thread_sleep(uint32_t ms) {
 
 tt_thread_t *tt_thread_self(void) {
 #if defined(TT_PLATFORM_LINUX)
-  (void)pthread_self(); // NOTE: warning suppression until completed
-  // NOTE: This needs a thread lookup table implementation
-  return NULL; // TODO: Temporary until lookup table is implemented
+  pthread_t handle = pthread_self();
+  return tt_thread_table_find_by_handle(&handle);
 #elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS)
-  TaskHandle_t current = xTaskGetCurrentTaskHandle();
-  // NOTE: This needs a thread lookup table implementation
-  return NULL; // TODO: Temporary until lookup table is implemented
+  TaskHandle_t handle = xTaskGetCurrentTaskHandle();
+  return tt_thread_table_find_by_handle(handle);
 #else
   return NULL;
 #endif
@@ -333,15 +325,26 @@ tt_error_t tt_thread_destroy(tt_thread_t *thread) {
     return TT_ERROR_NULL_POINTER;
   }
 
-#if defined(TT_PLATFORM_LINUX)
+  // First, ensure thread is not running
+  if (thread->state != TT_THREAD_STATE_TERMINATED) {
+    return TT_ERROR_THREAD_ACTIVE;
+  }
 
+  // Unregister from thread table
+  tt_error_t result = tt_thread_table_unregister(thread);
+  if (result != TT_SUCCESS) {
+    return result;
+  }
+
+#if defined(TT_PLATFORM_LINUX)
+  pthread_t *pthread_handle = (pthread_t *)thread->handle;
+  pthread_detach(*pthread_handle);
+  free(pthread_handle);
 #elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS)
   vTaskDelete(thread->handle);
-  free(thread->stack_buffer);
-  free(thread->task_buffer);
-#else
 #endif
 
+  // Free memory
   free(thread);
   return TT_SUCCESS;
 }

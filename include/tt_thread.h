@@ -52,6 +52,12 @@ typedef struct tt_thread_t tt_thread_t;
 typedef void *(*tt_thread_func_t)(void *arg);
 
 /**
+ * @brief Initialize global thread handle
+ * @return TT_SUCCESS on success, error code otherwise
+ */
+tt_error_t tt_thread_init(void);
+
+/**
  * @brief Initialize thread attributes with default values
  * @param attr Pointer to thread attributes structure
  * @return TT_SUCCESS on success, error code otherwise

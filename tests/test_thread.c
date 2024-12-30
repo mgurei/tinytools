@@ -1,14 +1,14 @@
 /**
  * @file test_thread.c
  * @author Mihai Gurei <mihai.gurei@protonmail.com>
- * @date 2024-12-29
+ * @date 2024-12-29 19:27:52 UTC
  * @brief Thread API test suite
  * @copyright Copyright (c) 2024 AnAlphaBeta. All rights reserved.
  */
 
 #include "tt_atomic.h"
 #include "tt_test.h"
-#include "tt_thread.h"
+#include "tt_thread_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -23,17 +23,48 @@ static void *increment_counter(void *arg) {
   for (int i = 0; i < ITERATIONS; i++) {
     tt_atomic_add(&shared_counter, 1, TT_MEMORY_ORDER_RELEASE);
   }
-  return NULL;
+  return (void *)((uintptr_t)ITERATIONS);
 }
 
 static void *test_sleep_function(void *arg) {
   uint32_t sleep_time = *(uint32_t *)arg;
   tt_thread_sleep(sleep_time);
-  return NULL;
+  return (void *)((uintptr_t)sleep_time);
+}
+
+/* Test Setup */
+static void test_setup(void) {
+  tt_error_t result = tt_thread_init();
+  if (result != TT_SUCCESS) {
+    fprintf(stderr, "Failed to initialize thread subsystem\n");
+    exit(1);
+  }
+}
+
+void tt_thread_table_print_status(void) {
+  printf("\nThread Table Status\n");
+  printf("----------------------------------------\n");
+  printf("Index | In Use |    Thread Ptr    | State\n");
+  printf("----------------------------------------\n");
+
+  tt_mutex_lock(&g_thread_table_mutex);
+
+  for (size_t i = 0; i < TT_MAX_THREADS; i++) {
+    if (g_thread_table[i].in_use) {
+      printf("[%3zu] |   YES   | %p | %d\n", i,
+             (void *)&g_thread_table[i].thread,
+             g_thread_table[i].thread->state);
+    }
+  }
+
+  tt_mutex_unlock(&g_thread_table_mutex);
+  printf("----------------------------------------\n\n");
 }
 
 /* Test cases */
 TT_TEST(test_thread_attr_init) {
+  test_setup();
+
   tt_thread_attr_t attr;
   tt_error_t result = tt_thread_attr_init(&attr);
 
@@ -45,14 +76,31 @@ TT_TEST(test_thread_attr_init) {
 }
 
 TT_TEST(test_thread_create_destroy) {
+  test_setup();
+
   tt_thread_t *thread;
+  void *retval;
   tt_error_t result = tt_thread_create(&thread, NULL, increment_counter, NULL);
+
+  /* printf("\nAfter thread creation:\n"); */
+  /* printf("Direct thread state: %d\n", thread->state); */
+  /* tt_thread_table_print_status(); */
 
   TT_ASSERT_EQUAL(TT_SUCCESS, result, "%d");
   TT_ASSERT(thread != NULL);
 
-  result = tt_thread_join(thread, NULL);
+  result = tt_thread_join(thread, &retval);
+
+  /* printf("\nAfter thread join:\n"); */
+  /* printf("Direct thread state: %d\n", thread->state); */
+  /* tt_thread_table_print_status(); */
+
   TT_ASSERT_EQUAL(TT_SUCCESS, result, "%d");
+  TT_ASSERT_EQUAL(ITERATIONS, (int)((uintptr_t)retval), "%d");
+
+  /* printf("\nBefore thread destroy:\n"); */
+  /* printf("Direct thread state: %d\n", thread->state); */
+  /* tt_thread_table_print_status(); */
 
   result = tt_thread_destroy(thread);
   TT_ASSERT_EQUAL(TT_SUCCESS, result, "%d");
@@ -60,7 +108,10 @@ TT_TEST(test_thread_create_destroy) {
 }
 
 TT_TEST(test_thread_concurrent_execution) {
+  test_setup();
+
   tt_thread_t *threads[NUM_THREADS];
+  void *retvals[NUM_THREADS];
   tt_atomic_init(&shared_counter, 0);
 
   // Create multiple threads
@@ -72,8 +123,9 @@ TT_TEST(test_thread_concurrent_execution) {
 
   // Join all threads
   for (int i = 0; i < NUM_THREADS; i++) {
-    tt_error_t result = tt_thread_join(threads[i], NULL);
+    tt_error_t result = tt_thread_join(threads[i], &retvals[i]);
     TT_ASSERT_EQUAL(TT_SUCCESS, result, "%d");
+    TT_ASSERT_EQUAL(ITERATIONS, (int)((uintptr_t)retvals[i]), "%d");
   }
 
   // Add memory fence to ensure all threads have completed
@@ -91,36 +143,49 @@ TT_TEST(test_thread_concurrent_execution) {
 }
 
 TT_TEST(test_thread_sleep) {
+  test_setup();
+
   tt_thread_t *thread;
   uint32_t sleep_time = 100; // 100ms
+  void *retval;
 
   tt_error_t result =
       tt_thread_create(&thread, NULL, test_sleep_function, &sleep_time);
   TT_ASSERT_EQUAL(TT_SUCCESS, result, "%d");
 
-  result = tt_thread_join(thread, NULL);
+  result = tt_thread_join(thread, &retval);
   TT_ASSERT_EQUAL(TT_SUCCESS, result, "%d");
+  TT_ASSERT_EQUAL(sleep_time, (uint32_t)((uintptr_t)retval), "%u");
 
   tt_thread_destroy(thread);
   return true;
 }
 
 TT_TEST(test_thread_priority) {
+  test_setup();
+
   tt_thread_t *thread;
+  void *retval;
   tt_error_t result = tt_thread_create(&thread, NULL, increment_counter, NULL);
   TT_ASSERT_EQUAL(TT_SUCCESS, result, "%d");
 
   result = tt_thread_set_priority(thread, TT_THREAD_PRIORITY_HIGH);
   TT_ASSERT_EQUAL(TT_SUCCESS, result, "%d");
 
-  tt_thread_join(thread, NULL);
+  result = tt_thread_join(thread, &retval);
+  TT_ASSERT_EQUAL(TT_SUCCESS, result, "%d");
+  TT_ASSERT_EQUAL(ITERATIONS, (int)((uintptr_t)retval), "%d");
+
   tt_thread_destroy(thread);
   return true;
 }
 
 TT_TEST(test_thread_state) {
+  test_setup();
+
   tt_thread_t *thread;
   tt_thread_state_t state;
+  void *retval;
 
   tt_error_t result = tt_thread_create(&thread, NULL, increment_counter, NULL);
   TT_ASSERT_EQUAL(TT_SUCCESS, result, "%d");
@@ -130,7 +195,10 @@ TT_TEST(test_thread_state) {
   TT_ASSERT(state == TT_THREAD_STATE_RUNNING ||
             state == TT_THREAD_STATE_CREATED);
 
-  tt_thread_join(thread, NULL);
+  result = tt_thread_join(thread, &retval);
+  TT_ASSERT_EQUAL(TT_SUCCESS, result, "%d");
+  TT_ASSERT_EQUAL(ITERATIONS, (int)((uintptr_t)retval), "%d");
+
   result = tt_thread_get_state(thread, &state);
   TT_ASSERT_EQUAL(TT_SUCCESS, result, "%d");
   TT_ASSERT_EQUAL(TT_THREAD_STATE_TERMINATED, state, "%d");

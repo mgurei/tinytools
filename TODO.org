@@ -1,48 +1,160 @@
 #+title: Todo
 #+author: Mihai Gurei <mihai.gurei@protonmail.com>
+#+date: 2024-12-31
+#+email: mihai.gurei@protonmail.com
 
-* TODO: Errors to be fixed
+* Project Status Overview [0/7]
+- [ ] Platform Abstraction Layer
+- [ ] Core System Components
+- [ ] Threading System
+- [ ] Memory Management
+- [ ] Time Management
+- [ ] Build System
+- [ ] Testing Framework
 
-* Build system Improvements
-** Add configuration options
-** Cross-compilation support
-** Test coverage support
-** Static Analysis integration
+* Critical Issues [0/1]
+** TODO Known Errors
+- Document specific errors here
+- Add reproduction steps
+- Add priority levels
 
-* Features
-** Error: PARTIAL
-** Ring Buffer: PARTIAL
-** Mutex system: PARTIAL
-** Atomic Operations Module: PARTIAL
-*** atomic_add, atomic_sub, atomic_compare_exchange: COMPLETE
-** Thread API: PARTIAL
-*** Platform-Independent thread creation/management: PARTIAL
-**** Linux: PARTIAL
-***** Thread suspension?
-***** thread lookup table implementation
-**** Arduino: PARTIAL
-**** Raspberry
-**** RTOS: PARTIAL
-**** bare-metal
-**** Windows?
-*** Thread pooling capabilities
-** Platform abstraction layer
-*** Abstract hardware specific ops
-*** Make mutex platform-specific when needed
-*** Basic timing and delay functions
-** Logging system
-*** Thread-safe logging mechanism
-*** Different log levels - DEBUG, INFO, WARNING, ERROR
-*** Output formating and routing
-** Memory Management
-*** Thread-safe memory pool allocation
-*** Memory fence ops
-*** Buffer management utilities
-*** Statistics tracking
-*** Leak detection in debug
-** Time Management
-*** Platform-indipendent time functions
-*** High-resolution timers
-*** Timeout utilies
-** Fixed point math
-** More....
+* Core Infrastructure [2/6]
+** PARTIAL Error Handling System
+*** TODO Error codes standardization
+*** TODO Error reporting mechanism
+*** DONE Basic error types
+*** TODO Error recovery procedures
+
+** PARTIAL Ring Buffer Implementation
+*** DONE Basic operations
+*** TODO Thread safety
+*** TODO Overflow handling
+*** TODO Performance optimization
+
+** PARTIAL Mutex System
+*** DONE Basic mutex operations
+*** TODO Platform-specific optimizations
+*** TODO Deadlock detection (debug mode)
+*** TODO Priority inheritance
+
+** PARTIAL Atomic Operations Module
+*** DONE atomic_add
+*** DONE atomic_sub
+*** DONE atomic_compare_exchange
+*** TODO Additional atomic operations
+*** TODO Platform-specific optimizations
+
+** TODO Logging System
+*** TODO Thread-safe implementation
+*** TODO Log levels (DEBUG, INFO, WARNING, ERROR)
+*** TODO Output formatting
+*** TODO Output routing
+*** TODO Performance optimization
+
+** TODO Fixed Point Math
+*** TODO Basic operations
+*** TODO Optimization for target platforms
+*** TODO Accuracy verification tests
+
+* Threading System [1/5]
+** PARTIAL Platform-Independent Thread API
+*** Implementation Status by Platform [0/6]
+**** PARTIAL Linux
+***** TODO Thread suspension
+***** PARTIAL Thread lookup table
+***** TODO Resource cleanup
+
+**** PARTIAL Arduino
+***** TODO Basic threading
+***** TODO Resource constraints handling
+
+**** PARTIAL Raspberry Pi
+***** TODO Platform-specific optimizations
+***** TODO GPIO integration
+
+**** PARTIAL FreeRTOS
+***** TODO RTOS integration
+***** TODO Priority handling
+
+**** TODO Bare Metal
+***** TODO Minimal threading support
+***** TODO Hardware abstraction
+
+**** TODO Windows (Future Consideration)
+***** TODO Win32 threading support
+***** TODO MSVC compatibility
+
+*** TODO Thread Management [0/4]
+- [ ] Creation/Destruction
+- [ ] Scheduling
+- [ ] Priority handling
+- [ ] State management
+
+*** TODO Thread Synchronization [0/3]
+- [ ] Basic primitives
+- [ ] Deadlock prevention
+- [ ] Priority inversion handling
+
+*** DONE Thread Error Handling
+*** TODO Thread Pool Implementation
+
+* Platform Abstraction Layer [1/4]
+** PARTIAL Platform Support
+*** PARTIAL Linux
+*** MINIMAL Arduino
+*** MINIMAL FreeRTOS
+
+** TODO Hardware Abstraction [0/3]
+- [ ] CPU-specific operations
+- [ ] Memory barriers
+- [ ] Interrupt handling
+
+** TODO Platform-Specific Features [0/3]
+- [ ] Mutex optimization
+- [ ] Atomic operations
+- [ ] Threading model
+
+** DONE Basic Platform Detection
+
+* Memory Management System [0/5]
+** TODO Thread-Safe Memory Pool
+** TODO Memory Fence Operations
+** TODO Buffer Management
+** TODO Statistics Tracking
+** TODO Debug Features [0/3]
+- [ ] Leak detection
+- [ ] Usage tracking
+- [ ] Corruption detection
+
+* Time Management [0/3]
+** TODO Platform-Independent Time Functions
+** TODO High-Resolution Timers
+** TODO Timeout Utilities
+
+* Build System Improvements [0/4]
+** TODO Configuration System
+*** TODO Build options
+*** TODO Feature toggles
+*** TODO Platform selection
+
+** TODO Cross-Compilation Support
+*** TODO Toolchain configuration
+*** TODO Platform-specific builds
+
+** TODO Test Coverage Integration
+*** TODO Coverage reporting
+*** TODO Integration with CI
+
+** TODO Static Analysis
+*** TODO Tool selection
+*** TODO Integration
+*** TODO Rule configuration
+
+* Testing Framework [0/3]
+** TODO Unit Testing
+** TODO Integration Testing
+** TODO Performance Testing
+
+* Future Considerations [0/2]
+** TODO Additional Platform Support
+** TODO Advanced Features

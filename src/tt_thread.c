@@ -311,7 +311,7 @@ tt_error_t tt_thread_sleep(uint32_t ms) {
 tt_thread_t *tt_thread_self(void) {
 #if defined(TT_PLATFORM_LINUX)
   pthread_t handle = pthread_self();
-  return tt_thread_table_find_by_handle(&handle);
+  return tt_thread_table_find_by_handle(handle);
 #elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS)
   TaskHandle_t handle = xTaskGetCurrentTaskHandle();
   return tt_thread_table_find_by_handle(handle);

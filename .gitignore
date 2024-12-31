@@ -7,3 +7,4 @@ lib/
 compile_commands.json
 .projectile
 .dir-locals.el
+.clangd

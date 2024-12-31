@@ -120,6 +120,12 @@ const char *tt_error_to_string(tt_error_t error) {
     return "Platform specific error";
   case TT_ERROR_MUTEX_ERROR:
     return "Mutex operation failed";
+  case TT_ERROR_MUTEX_INIT:
+    return "Mutex initialization failed";
+  case TT_ERROR_MUTEX_DESTROY:
+    return "Mutex destroy failed";
+  case TT_ERROR_MUTEX_LOCK:
+    return "Failed to lock mutex";
   case TT_ERROR_THREAD_CREATE:
     return "Fail to create thread";
   case TT_ERROR_THREAD_JOIN:
@@ -132,6 +138,14 @@ const char *tt_error_to_string(tt_error_t error) {
     return "Resource not found";
   case TT_ERROR_THREAD_ACTIVE:
     return "Fail to destroy a thread";
+  case TT_ERROR_ALREADY_INITIALIZED:
+    return "Resource is already initialized";
+  case TT_ERROR_PLATFORM_NOT_SUPPORTED:
+    return "Platform not supported";
+  case TT_ERROR_PLATFORM_INIT:
+    return "Fail to initialized platform";
+  case TT_ERROR_THREAD_DETACH:
+    return "Fail to detach thread";
 
   case TT_ERROR_NOT_IMPLEMENTED:
     return "Feature not implemented";

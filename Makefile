@@ -12,9 +12,30 @@ BUILD_DIR := build
 LIB_DIR := lib
 TEST_DIR := $(BUILD_DIR)/tests
 
+# Platform directories
+PLATFORM_DIR := src/platform
+PLATFORM_LINUX_DIR := $(PLATFORM_DIR)/linux
+PLATFORM_ARDUINO_DIR := $(PLATFORM_DIR)/arduino
+PLATFORM_FREERTOS_DIR := $(PLATFORM_DIR)/freertos
+
 # Source files
 SRCS := $(wildcard src/*.c)
-OBJS := $(SRCS:src/%.c=$(BUILD_DIR)/%.o)
+PLATFORM_SRCS := $(wildcard $(PLATFORM_DIR)/*.c)
+
+# Platform specific sources
+ifeq ($(PLATFORM),arduino)
+    PLATFORM_IMPL_SRCS := $(wildcard $(PLATFORM_ARDUINO_DIR)/*.c)
+else ifeq ($(PLATFORM),raspberry)
+    PLATFORM_IMPL_SRCS := $(wildcard $(PLATFORM_LINUX_DIR)/*.c)  # Using Linux implementation for RPi
+else
+    PLATFORM_IMPL_SRCS := $(wildcard $(PLATFORM_LINUX_DIR)/*.c)
+endif
+
+# Combine all sources
+ALL_SRCS := $(SRCS) $(PLATFORM_SRCS) $(PLATFORM_IMPL_SRCS)
+OBJS := $(SRCS:src/%.c=$(BUILD_DIR)/%.o) \
+        $(PLATFORM_SRCS:$(PLATFORM_DIR)/%.c=$(BUILD_DIR)/platform/%.o) \
+        $(PLATFORM_IMPL_SRCS:$(PLATFORM_DIR)/%.c=$(BUILD_DIR)/platform/%.o)
 
 # Test files
 TEST_SRCS := $(wildcard tests/*.c)
@@ -29,11 +50,11 @@ PLATFORM ?= linux  # Default platform
 ifeq ($(PLATFORM),arduino)
     CC := avr-gcc
     CFLAGS += -mmcu=atmega4809  # R4 Minima uses ATmega4809
-    CFLAGS += -DPLATFORM_ARDUINO
+    CFLAGS += -DTT_PLATFORM_ARDUINO
 else ifeq ($(PLATFORM),raspberry)
-    CFLAGS += -DPLATFORM_RASPBERRY
+    CFLAGS += -DTT_PLATFORM_RASPBERRY
 else
-    CFLAGS += -DPLATFORM_LINUX
+    CFLAGS += -DTT_PLATFORM_LINUX
 endif
 
 # Debug build
@@ -50,10 +71,31 @@ TEST_CFLAGS := $(CFLAGS) -I./tests
 all: dirs $(LIB_DIR)/$(LIB_NAME)
 
 dirs:
-	@mkdir -p $(BUILD_DIR) $(LIB_DIR) $(TEST_DIR)
+	@mkdir -p $(BUILD_DIR) $(LIB_DIR) $(TEST_DIR) \
+        $(BUILD_DIR)/platform/linux \
+        $(BUILD_DIR)/platform/arduino \
+        $(BUILD_DIR)/platform/freertos
 
 $(BUILD_DIR)/%.o: src/%.c
 	@echo "Compiling $<..."
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+# Rule for platform/*.c files
+$(BUILD_DIR)/platform/%.o: $(PLATFORM_DIR)/%.c
+	@echo "Compiling platform file $<..."
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+# Rule for platform-specific implementation files
+$(BUILD_DIR)/platform/%.o: $(PLATFORM_LINUX_DIR)/%.c
+	@echo "Compiling Linux platform file $<..."
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/platform/%.o: $(PLATFORM_ARDUINO_DIR)/%.c
+	@echo "Compiling Arduino platform file $<..."
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/platform/%.o: $(PLATFORM_FREERTOS_DIR)/%.c
+	@echo "Compiling FreeRTOS platform file $<..."
 	@$(CC) $(CFLAGS) -c $< -o $@
 
 $(LIB_DIR)/$(LIB_NAME): $(OBJS)

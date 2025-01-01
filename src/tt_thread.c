@@ -17,18 +17,18 @@
 #include <string.h>
 
 /* Platform-specific includes */
-#if defined(__linux__)
+#if defined(TT_TARGET_LINUX)
 #include <pthread.h>
 #include <time.h>
 #include <unistd.h>
 #define TT_PLATFORM_LINUX
 
-#elif defined(ARDUINO)
+#elif defined(TT_TARGET_ARDUINO)
 #include <Arduino_FreeRTOS.h>
 #include <semphr.h>
 #define TT_PLATFORM_ARDUINO
 
-#elif defined(FREE_RTOS)
+#elif defined(TT_TARGET_FREERTOS)
 #include "FreeRTOS.h"
 #include "task.h"
 #define TT_PLATFORM_FREERTOS
@@ -142,7 +142,7 @@ tt_error_t tt_thread_create(tt_thread_t **thread, const tt_thread_attr_t *attr,
     return TT_ERROR_THREAD_CREATE;
   }
 
-  new_thread->handle = (platform_thread_handle_t)handle;
+  new_thread->handle = (tt_platform_thread_handle_t)handle;
 
 #elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS)
   TaskHandle_t task_handle = NULL;
@@ -311,7 +311,7 @@ tt_error_t tt_thread_sleep(uint32_t ms) {
 tt_thread_t *tt_thread_self(void) {
 #if defined(TT_PLATFORM_LINUX)
   pthread_t handle = pthread_self();
-  return tt_thread_table_find_by_handle(handle);
+  return tt_thread_table_find_by_handle((tt_platform_thread_handle_t)handle);
 #elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS)
   TaskHandle_t handle = xTaskGetCurrentTaskHandle();
   return tt_thread_table_find_by_handle(handle);

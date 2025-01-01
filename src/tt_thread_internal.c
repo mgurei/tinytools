@@ -81,7 +81,8 @@ tt_error_t tt_thread_table_unregister(tt_thread_t *thread) {
   return result;
 }
 
-tt_thread_t *tt_thread_table_find_by_handle(platform_thread_handle_t handle) {
+tt_thread_t *
+tt_thread_table_find_by_handle(tt_platform_thread_handle_t handle) {
   tt_thread_t *result = NULL;
 
   tt_mutex_lock(&g_thread_table_mutex);
@@ -89,7 +90,7 @@ tt_thread_t *tt_thread_table_find_by_handle(platform_thread_handle_t handle) {
   for (size_t i = 0; i < TT_MAX_THREADS; i++) {
     if (g_thread_table[i].in_use &&
         memcmp(&g_thread_table[i].thread->handle, &handle,
-               sizeof(platform_thread_handle_t))) {
+               sizeof(tt_platform_thread_handle_t))) {
       result = g_thread_table[i].thread;
       break;
     }

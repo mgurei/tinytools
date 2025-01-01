@@ -50,11 +50,11 @@ PLATFORM ?= linux  # Default platform
 ifeq ($(PLATFORM),arduino)
     CC := avr-gcc
     CFLAGS += -mmcu=atmega4809  # R4 Minima uses ATmega4809
-    CFLAGS += -DTT_PLATFORM_ARDUINO
+    CFLAGS += -DTT_TARGET_ARDUINO
 else ifeq ($(PLATFORM),raspberry)
-    CFLAGS += -DTT_PLATFORM_RASPBERRY
+    CFLAGS += -DTT_TARGET_RASPBERRY
 else
-    CFLAGS += -DTT_PLATFORM_LINUX
+    CFLAGS += -DTT_TARGET_LINUX #-DTT_CAP_MUTEX
 endif
 
 # Debug build
@@ -77,25 +77,25 @@ dirs:
         $(BUILD_DIR)/platform/freertos
 
 $(BUILD_DIR)/%.o: src/%.c
-	@echo "Compiling $<..."
+	@echo "Compiling $< with flags: $(CFLAGS)..."
 	@$(CC) $(CFLAGS) -c $< -o $@
 
 # Rule for platform/*.c files
 $(BUILD_DIR)/platform/%.o: $(PLATFORM_DIR)/%.c
-	@echo "Compiling platform file $<..."
+	@echo "Compiling platform file $< with flags: $(CFLAGS)..."
 	@$(CC) $(CFLAGS) -c $< -o $@
 
 # Rule for platform-specific implementation files
 $(BUILD_DIR)/platform/%.o: $(PLATFORM_LINUX_DIR)/%.c
-	@echo "Compiling Linux platform file $<..."
+	@echo "Compiling Linux platform file $< with flags: $(CFLAGS)..."
 	@$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/platform/%.o: $(PLATFORM_ARDUINO_DIR)/%.c
-	@echo "Compiling Arduino platform file $<..."
+	@echo "Compiling Arduino platform file $< with flags: $(CFLAGS)..."
 	@$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/platform/%.o: $(PLATFORM_FREERTOS_DIR)/%.c
-	@echo "Compiling FreeRTOS platform file $<..."
+	@echo "Compiling FreeRTOS platform file $< with flags: $(CFLAGS)..."
 	@$(CC) $(CFLAGS) -c $< -o $@
 
 $(LIB_DIR)/$(LIB_NAME): $(OBJS)

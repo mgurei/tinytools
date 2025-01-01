@@ -15,17 +15,17 @@
 #if defined(TT_PLATFORM_LINUX)
 
 #include <pthread.h>
-typedef pthread_t platform_thread_handle_t;
+typedef pthread_t tt_platform_thread_handle_t;
 
 #elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS)
 
 #include <FreeRTOS.h>
 #include <task.h>
-typedef TaskHandle_t platform_thread_handle_t;
+typedef TaskHandle_t tt_platform_thread_handle_t;
 
 #else
 
-typedef void *platform_thread_handle_t;
+typedef void *tt_platform_thread_handle_t;
 
 #endif
 
@@ -38,15 +38,15 @@ typedef void *platform_thread_handle_t;
  * @brief Thread structure
  */
 struct tt_thread_t {
-  platform_thread_handle_t handle; /**< Platform-specifi thread handle*/
-  tt_thread_state_t state;         /**< Current thread state*/
-  tt_thread_priority_t priority;   /**< Current priority*/
-  tt_thread_func_t func;           /**< Thread function*/
-  void *arg;                       /**< Thread function argument*/
-  const char *name;                /**< Thread name (if supported)*/
-  size_t stack_size;               /**< Stack size (if applicable)*/
-  void *retval;                    /**< Return value*/
-  bool is_active;                  /**< Slot is in use*/
+  tt_platform_thread_handle_t handle; /**< Platform-specifi thread handle*/
+  tt_thread_state_t state;            /**< Current thread state*/
+  tt_thread_priority_t priority;      /**< Current priority*/
+  tt_thread_func_t func;              /**< Thread function*/
+  void *arg;                          /**< Thread function argument*/
+  const char *name;                   /**< Thread name (if supported)*/
+  size_t stack_size;                  /**< Stack size (if applicable)*/
+  void *retval;                       /**< Return value*/
+  bool is_active;                     /**< Slot is in use*/
 };
 
 /**
@@ -94,6 +94,6 @@ tt_error_t tt_thread_table_unregister(tt_thread_t *thread);
  * @param handle Platform specific thread handle
  * @return Thread table pointer
  */
-tt_thread_t *tt_thread_table_find_by_handle(platform_thread_handle_t handle);
+tt_thread_t *tt_thread_table_find_by_handle(tt_platform_thread_handle_t handle);
 
 #endif // TT_THREAD_INTERNAL_H_

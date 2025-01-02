@@ -33,8 +33,8 @@ tt_error_t tt_platform_freertos_init(tt_platform_info_t *info) {
   // Basic freeRTOS platform info
   info->platform_type = TT_PLATFORM_FREERTOS;
   info->arch_type = TT_ARCH_UNKNOWN; // TODO: Should be base on target
-  info->capabilities =
-      TT_CAP_THREADS | TT_CAP_MUTEX | TT_CAP_SEMAPHORE | TT_CAP_TIMERS;
+  info->capabilities = TT_PLATFORM_CAP_THREADS | TT_PLATFORM_CAP_MUTEX |
+                       TT_PLATFORM_CAP_SEMAPHORE | TT_PLATFORM_CAP_TIMERS;
 
   // System information
   info->system.cpu_frequency = configCPU_CLOCK_HZ;

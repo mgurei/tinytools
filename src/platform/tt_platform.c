@@ -21,11 +21,11 @@ tt_error_t tt_platfor_init() {
 
   tt_error_t err;
 
-#if defined(__linux__)
+#if defined(TT_PLATFORM_LINUX)
   err = tt_platform_linux_init(&platform_info);
-#elif defined(ARDUINO)
+#elif defined(TT_PLATFORM_ARDUINO)
   err = tt_platform_arduino_init(&platform_info);
-#elif defined(FREERTOS)
+#elif defined(TT_PLATFORM_FREERTOS)
   err = tt_platform_freertos_init(&platform_info);
 #else
   err = TT_ERROR_PLATFORM_NOT_SUPPORTED;
@@ -46,11 +46,11 @@ tt_error_t tt_platform_cleanup(void) {
 
   tt_error_t err;
 
-#if defined(__linux__)
+#if defined(TT_PLATFORM_LINUX)
   err = tt_platform_linux_cleanup();
-#elif defined(ARDUINO)
+#elif defined(TT_PLATFORM_ARDUINO)
   err = tt_platform_arduino_cleanup();
-#elif defined(FREERTOS)
+#elif defined(TT_PLATFORM_FREERTOS)
   err = tt_platform_freertos_cleanup();
 #else
   err = TT_ERROR_PLATFORM_NOT_SUPPORTED;

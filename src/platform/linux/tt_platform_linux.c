@@ -11,10 +11,18 @@
 #include "tt_types.h"
 #include <pthread.h>
 #include <sched.h>
+#include <stdlib.h>
 #include <sys/sysinfo.h>
 #include <unistd.h>
 
 static struct sysinfo si;
+
+/**
+ * @brief Internal definition of Linux-specific mutex data
+ */
+typedef struct {
+  pthread_mutex_t pthread_mutex;
+} tt_linux_mutex_t;
 
 tt_error_t tt_platform_linux_init(tt_platform_info_t *info) {
   if (info == NULL) {
@@ -42,8 +50,9 @@ tt_error_t tt_platform_linux_init(tt_platform_info_t *info) {
 #endif
 
   // set capabilities
-  info->capabilities = TT_CAP_THREADS | TT_CAP_MUTEX | TT_CAP_SEMAPHORE |
-                       TT_CAP_TLS | TT_CAP_ATOMIC | TT_CAP_TIMERS;
+  info->capabilities = TT_PLATFORM_CAP_THREADS | TT_PLATFORM_CAP_MUTEX |
+                       TT_PLATFORM_CAP_SEMAPHORE | TT_PLATFORM_CAP_TLS |
+                       TT_PLATFORM_CAP_ATOMIC | TT_PLATFORM_CAP_TIMERS;
 
   info->system.cpu_frequency = 0; // TODO: implement CPU freq det
   info->system.ram_size = si.totalram;
@@ -65,7 +74,7 @@ tt_error_t tt_platform_linux_init(tt_platform_info_t *info) {
 
 tt_error_t tt_platform_linux_cleanup() { return TT_SUCCESS; }
 
-#ifdef TT_CAP_THREADS
+#if defined(TT_CAP_THREADS)
 tt_error_t tt_platform_thread_create(tt_thread_t *thread,
                                      const tt_thread_attr_t *attr,
                                      tt_thread_func_t func, void *arg) {
@@ -81,7 +90,7 @@ tt_error_t tt_platform_thread_create(tt_thread_t *thread,
 
   if (attr != NULL) {
     if (attr->stack_size > 0) {
-      ret = phtread_attr_setstacksize(&pthread_attr, attr->stack_size);
+      ret = pthread_attr_setstacksize(&pthread_attr, attr->stack_size);
       if (ret != 0) {
         pthread_attr_destroy(&pthread_attr);
         return TT_ERROR_THREAD_CREATE;
@@ -118,38 +127,102 @@ tt_error_t tt_platform_thread_exit(void *retval) {
 #endif /* TT_CAP_THREADS */
 
 #ifdef TT_CAP_MUTEX
-tt_error_t tt_platform_mutex_init(tt_mutex_t *mutex,
-                                  const tt_mutex_attr_t *attr) {
+/* tt_error_t tt_platform_mutex_init(tt_mutex_t *mutex, */
+/*                                   const tt_mutex_attr_t *attr) { */
+tt_error_t tt_platform_mutex_init(tt_mutex_t *mutex) {
   if (mutex == NULL) {
     return TT_ERROR_NULL_POINTER;
   }
-  return (pthread_mutex_init(&mutex->handle, NULL) == 0) ? TT_SUCCESS
-                                                         : TT_ERROR_MUTEX_INIT;
+
+  tt_linux_mutex_t *linux_mutex =
+      (tt_linux_mutex_t *)malloc(sizeof(tt_linux_mutex_t));
+  if (linux_mutex == NULL) {
+    return TT_ERROR_MEMORY;
+  }
+
+  int res = pthread_mutex_init(&linux_mutex->pthread_mutex, NULL);
+  if (res != 0) {
+    free(linux_mutex);
+    return TT_ERROR_MUTEX_INIT;
+  }
+
+  mutex->lock = linux_mutex;
+  mutex->initialized = true;
+
+  return TT_SUCCESS;
 }
 
 tt_error_t tt_platform_mutex_destroy(tt_mutex_t *mutex) {
   if (mutex == NULL) {
     return TT_ERROR_NULL_POINTER;
   }
-  return (pthread_mutex_destroy(&mutex->handle) == 0) ? TT_SUCCESS
-                                                      : TT_ERROR_MUTEX_DESTROY;
+
+  tt_linux_mutex_t *linux_mutex = (tt_linux_mutex_t *)mutex->lock;
+  int res = pthread_mutex_destroy(&linux_mutex->pthread_mutex);
+  if (res != 0) {
+    return TT_ERROR_MUTEX_DESTROY;
+  }
+
+  free(linux_mutex);
+  mutex->initialized = false;
+
+  return TT_SUCCESS;
 }
 
 tt_error_t tt_platform_mutex_lock(tt_mutex_t *mutex) {
   if (mutex == NULL) {
+    return TT_ERROR_NULL_POINTER;
+  }
+  if (!mutex->initialized) {
     return TT_ERROR_INVALID_PARAM;
   }
-  return (pthread_mutex_lock(&mutex->handle) == 0) ? TT_SUCCESS
-                                                   : TT_ERROR_MUTEX_LOCK;
+
+  tt_linux_mutex_t *linux_mutex = (tt_linux_mutex_t *)mutex->lock;
+  return (pthread_mutex_lock(&linux_mutex->pthread_mutex) == 0)
+             ? TT_SUCCESS
+             : TT_ERROR_MUTEX_LOCK;
 }
 
 tt_error_t tt_platform_mutex_unlock(tt_mutex_t *mutex) {
   if (mutex == NULL) {
+    return TT_ERROR_NULL_POINTER;
+  }
+  if (!mutex->initialized) {
     return TT_ERROR_INVALID_PARAM;
   }
-  return (pthread_mutex_unlock(&mutex->handle) == 0) ? TT_SUCCESS
-                                                     : TT_ERROR_MUTEX_UNLOCK;
+
+  tt_linux_mutex_t *linux_mutex = (tt_linux_mutex_t *)mutex->lock;
+  return (pthread_mutex_unlock(&linux_mutex->pthread_mutex) == 0)
+             ? TT_SUCCESS
+             : TT_ERROR_MUTEX_UNLOCK;
 }
+
+tt_error_t tt_platform_mutex_trylock(tt_mutex_t *mutex) {
+  if (mutex == NULL) {
+    return TT_ERROR_NULL_POINTER;
+  }
+  if (!mutex->initialized) {
+    return TT_ERROR_INVALID_PARAM;
+  }
+
+  tt_linux_mutex_t *linux_mutex = (tt_linux_mutex_t *)mutex->lock;
+  return (pthread_mutex_trylock(&linux_mutex->pthread_mutex) == 0)
+             ? TT_SUCCESS
+             : TT_ERROR_BUSY;
+}
+bool tt_platform_mutex_is_locked(tt_mutex_t *mutex) {
+  if (mutex == NULL || !mutex->initialized) {
+    return false;
+  }
+
+  tt_linux_mutex_t *linux_mutex = (tt_linux_mutex_t *)mutex->lock;
+  if (pthread_mutex_trylock(&linux_mutex->pthread_mutex) == 0) {
+    pthread_mutex_unlock(&linux_mutex->pthread_mutex);
+    return false;
+  }
+  return true;
+}
+
 #endif /* TT_CAP_MUTEX */
 
 tt_error_t tt_platform_mem_init(void) {

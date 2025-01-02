@@ -11,6 +11,10 @@
 
 #include "tt_types.h"
 
+#if defined(TT_CAP_MUTEX)
+#include "tt_mutex.h"
+#endif /* TT_CAP_MUTEX*/
+
 /**
  * @brief Platform types
  */
@@ -21,10 +25,10 @@ typedef enum {
 #endif
   TT_PLATFORM_WINDOWS,
   TT_PLATFORM_MACOS,
-#ifdef TT_PLATFORM_ARDUINO
+#ifdef TT_TARGET_ARDUINO
   TT_PLATFORM_ARDUINO,
 #endif
-#ifdef TT_PLATFORM_FREERTOS
+#ifdef TT_TARGET_FREERTOS
   TT_PLATFORM_FREERTOS,
 #endif
   TT_PLATFORM_BAREMETAL,
@@ -49,15 +53,15 @@ typedef enum {
  * @brief Platform capabilities flags
  */
 typedef enum {
-  TT_CAP_NONE = 0,
-  TT_CAP_THREADS = (1 << 0),
-  TT_CAP_MUTEX = (1 << 1),
-  TT_CAP_SEMAPHORE = (1 << 2),
-  TT_CAP_TLS = (1 << 3), // Thread local storage
-  TT_CAP_ATOMIC = (1 << 4),
-  TT_CAP_IRQ = (1 << 5), // Interept handling
-  TT_CAP_TIMERS = (1 << 6),
-  TT_CAP_DMA = (1 << 7)
+  TT_PLATFORM_CAP_NONE = 0,
+  TT_PLATFORM_CAP_THREADS = (1 << 0),
+  TT_PLATFORM_CAP_MUTEX = (1 << 1),
+  TT_PLATFORM_CAP_SEMAPHORE = (1 << 2),
+  TT_PLATFORM_CAP_TLS = (1 << 3), // Thread local storage
+  TT_PLATFORM_CAP_ATOMIC = (1 << 4),
+  TT_PLATFORM_CAP_IRQ = (1 << 5), // Interept handling
+  TT_PLATFORM_CAP_TIMERS = (1 << 6),
+  TT_PLATFORM_CAP_DMA = (1 << 7)
 } tt_platform_caps_t;
 
 /**
@@ -162,8 +166,9 @@ tt_error_t tt_platform_thread_exit(void *retval);
  * @param attr Pointer to mutex attributes
  * @return TT_SUCCESS on success, error code otherwise
  */
-tt_error_t tt_platform_mutex_init(tt_mutex_t *mutex,
-                                  const tt_mutex_attr_t *attr);
+/* tt_error_t tt_platform_mutex_init(tt_mutex_t *mutex, */
+/*                                   const tt_mutex_attr_t *attr); */
+tt_error_t tt_platform_mutex_init(tt_mutex_t *mutex);
 
 /**
  * @brief Destroy platform-specific mutesx
@@ -185,7 +190,22 @@ tt_error_t tt_platform_mutex_lock(tt_mutex_t *mutex);
  * @return TT_SUCCESS on success, error code otherwise
  */
 tt_error_t tt_platform_mutex_unlock(tt_mutex_t *mutex);
-#endif
+
+/**
+ * @brief Try lock platform-specific mutex without blocking
+ * @param mutex Pointer to mutex
+ * @return TT_SUCCESS on success, TT_ERROR_BUSY if mutex is already locked
+ */
+tt_error_t tt_platform_mutex_trylock(tt_mutex_t *mutex);
+
+/**
+ * @brief Check if mutex is locked
+ * @param mutex Pointer to mutex structure
+ * @return true if mutex is locked, false otherwise
+ */
+bool tt_platform_mutex_is_locked(tt_mutex_t *mutex);
+
+#endif /* TT_CAP_MUTEX */
 
 // Interrupt handling (when TT_CAP_IRQ is supported)
 #if defined(TT_CAP_IRQ)
@@ -208,7 +228,7 @@ tt_error_t tt_platform_irq_disable(void);
  * @return TT_SUCCESS on success, error code otherwise
  */
 tt_error_t tt_platform_irq_set_priority(uint8_t irq_num, uint8_t priority);
-#endif
+#endif /* TT_CAP_IRQ */
 
 // Platform specific memory operations
 /**

@@ -29,7 +29,7 @@ tt_error_t tt_platform_arduino_init(tt_platform_info_t *info) {
   // Basic Arduino platform info
   info->platform_type = TT_PLATFORM_ARDUINO;
   info->arch_type = TT_ARCH_AVR;
-  info->capabilities = TT_CAP_IRQ | TT_CAP_TIMERS;
+  info->capabilities = TT_PLATFORM_CAP_IRQ | TT_PLATFORM_CAP_TIMERS;
 
   // System information
   info->system.cpu_frequency = F_CPU;

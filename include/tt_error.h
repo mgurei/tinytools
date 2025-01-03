@@ -10,6 +10,8 @@
 #define TT_ERROR_H_
 
 #include "tt_mutex.h"
+#include "tt_platform.h"
+#include "tt_thread.h"
 #include "tt_types.h"
 
 /**

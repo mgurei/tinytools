@@ -9,11 +9,15 @@
 #ifndef TT_PLATFORM_H_
 #define TT_PLATFORM_H_
 
+#include "tt_thread_enum.h"
 #include "tt_types.h"
 
-#if defined(TT_CAP_MUTEX)
-#include "tt_mutex.h"
-#endif /* TT_CAP_MUTEX*/
+// Forward declarations for thread-related types
+typedef struct tt_mutex_t tt_mutex_t;
+typedef struct tt_thread_t tt_thread_t;
+typedef struct tt_thread_table_entry_t tt_thread_table_entry_t;
+typedef struct tt_thread_attr_t tt_thread_attr_t;
+typedef void *(*tt_thread_func_t)(void *);
 
 /**
  * @brief Platform types
@@ -141,11 +145,47 @@ tt_error_t tt_platform_thread_create(tt_thread_t *thread,
 tt_error_t tt_platform_thread_join(tt_thread_t *thread, void **retval);
 
 /**
- * @brief Detach Platform-specific Thread
+ * @brief Set priority on a platform-specifi thread
+ * @param thread Thread handle
+ * @param priority New priority level
+ * @return TT_SUCCESS on success, error code otherwise
+ */
+tt_error_t tt_platform_thread_set_priority(tt_thread_t *thread,
+                                           tt_thread_priority_t priority);
+
+/**
+ * @brief Suspend thread execution
+ * @param thread Thread handle
+ * @return TT_SUCCESS on success, error code otherwise
+ */
+tt_error_t tt_platform_thread_suspend(tt_thread_t *thread);
+
+/**
+ * @brief Resume thread execution
+ * @param thread Thread handle
+ * @return TT_SUCCESS on success, error code otherwisw
+ */
+tt_error_t tt_platform_thread_resume(tt_thread_t *thread);
+
+/**
+ * @brief Sleep current thread for specified milliseconds
+ * @param ms Time to sleep in milliseconds
+ * @return TT_SUCCESS on success, error code otherwise
+ */
+tt_error_t tt_platform_thread_sleep(uint32_t ms);
+
+/**
+ * @brief Get current thread handle
+ * @return Current thread handle or NULL on error
+ */
+tt_thread_t *tt_platform_thread_self(void);
+
+/**
+ * @brief Destroy Platform-specific Thread
  * @param thread Pointer to thread handle
  * @return TT_SUCCESS on success, error code otherwise
  */
-tt_error_t tt_platform_thread_detach(tt_thread_t *thread);
+tt_error_t tt_platform_thread_destroy(tt_thread_t *thread);
 
 /**
  * @brief Exit platform-specific thread

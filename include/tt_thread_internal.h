@@ -9,22 +9,22 @@
 #ifndef TT_THREAD_INTERNAL_H_
 #define TT_THREAD_INTERNAL_H_
 
-#include "tt_mutex.h"
-#include "tt_thread.h"
+#include "tt_platform.h"
+/* #include "tt_thread.h" */
+#include "tt_thread_enum.h"
 
-#if defined(TT_PLATFORM_LINUX)
+#if defined(TT_CAP_THREADS)
 
+#if defined(TT_TARGET_LINUX)
 #include <pthread.h>
 typedef pthread_t tt_platform_thread_handle_t;
 
-#elif defined(TT_PLATFORM_ARDUINO) || defined(TT_PLATFORM_FREERTOS)
-
+#elif defined(TT_TARGET_ARDUINO) || defined(TT_TARGET_FREERTOS)
 #include <FreeRTOS.h>
 #include <task.h>
 typedef TaskHandle_t tt_platform_thread_handle_t;
 
 #else
-
 typedef void *tt_platform_thread_handle_t;
 
 #endif
@@ -52,10 +52,10 @@ struct tt_thread_t {
 /**
  * @brief Thread table entry
  */
-typedef struct {
+struct tt_thread_table_entry_t {
   tt_thread_t *thread;
   bool in_use;
-} tt_thread_table_entry_t;
+};
 
 /**
  * @brief Global thread table
@@ -96,4 +96,5 @@ tt_error_t tt_thread_table_unregister(tt_thread_t *thread);
  */
 tt_thread_t *tt_thread_table_find_by_handle(tt_platform_thread_handle_t handle);
 
+#endif /* TT_CAP_THREADS */
 #endif // TT_THREAD_INTERNAL_H_

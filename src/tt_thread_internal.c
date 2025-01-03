@@ -8,10 +8,10 @@
 
 #include "tt_thread_internal.h"
 #include "tt_mutex.h"
-#include "tt_thread.h"
 #include "tt_types.h"
 #include <string.h>
 
+#if defined(TT_CAP_THREADS)
 tt_thread_table_entry_t g_thread_table[TT_MAX_THREADS] = {0};
 tt_mutex_t g_thread_table_mutex = {0};
 
@@ -99,3 +99,5 @@ tt_thread_table_find_by_handle(tt_platform_thread_handle_t handle) {
   tt_mutex_unlock(&g_thread_table_mutex);
   return result;
 }
+
+#endif /* TT_CAP_THREADS */

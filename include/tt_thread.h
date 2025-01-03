@@ -9,37 +9,19 @@
 #ifndef TT_THREAD_H_
 #define TT_THREAD_H_
 
+#include "tt_platform.h"
+#include "tt_thread_enum.h"
 #include "tt_types.h"
-#include <stdint.h>
 
-/**
- * @brief Thread priority levels
- */
-typedef enum {
-  TT_THREAD_PRIORITY_LOW = 0,
-  TT_THREAD_PRIORITY_NORMAL,
-  TT_THREAD_PRIORITY_HIGH,
-  TT_THREAD_PRIORITY_REALTIME
-} tt_thread_priority_t;
-
-/**
- * @brief Thread state
- */
-typedef enum {
-  TT_THREAD_STATE_CREATED = 0,
-  TT_THREAD_STATE_RUNNING,
-  TT_THREAD_STATE_SUSPENDED,
-  TT_THREAD_STATE_TERMINATED
-} tt_thread_state_t;
-
+#if defined(TT_CAP_THREADS)
 /**
  * @brief Thread attributes
  */
-typedef struct {
+struct tt_thread_attr_t {
   tt_thread_priority_t priority;
   size_t stack_size;
   const char *name;
-} tt_thread_attr_t;
+};
 
 /**
  * @brief Thread handle
@@ -136,5 +118,18 @@ tt_thread_t *tt_thread_self(void);
  * @return TT_SUCCESS on success, error code otherwise
  */
 tt_error_t tt_thread_destroy(tt_thread_t *thread);
+
+#else
+
+/**
+ * @brief Dummy thread struct
+ */
+typedef struct {
+  int dummy; /**< Dummy field for platforms without thread support*/
+} tt_thread_t;
+
+// TODO: Add non functionality func
+
+#endif /* TT_CAP_THREADS */
 
 #endif // TT_THREAD_H_

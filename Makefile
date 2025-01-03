@@ -54,7 +54,7 @@ ifeq ($(PLATFORM),arduino)
 else ifeq ($(PLATFORM),raspberry)
     CFLAGS += -DTT_TARGET_RASPBERRY
 else
-    CFLAGS += -DTT_TARGET_LINUX #-DTT_CAP_MUTEX
+    CFLAGS += -DTT_TARGET_LINUX -DTT_CAP_MUTEX -DTT_CAP_THREADS
 endif
 
 # Debug build

@@ -5,14 +5,19 @@
  * @brief
  * @copyright Copyright (c) 2024 AnAlphaBeta. All rights reserved.
  */
+#define _POSIX_C_SOURCE 199309L
 
 #include "../internal/tt_platform_internal.h"
+#include "tt_mutex.h"
 #include "tt_platform.h"
+#include "tt_thread.h"
+#include "tt_thread_internal.h"
 #include "tt_types.h"
 #include <pthread.h>
 #include <sched.h>
 #include <stdlib.h>
 #include <sys/sysinfo.h>
+#include <time.h>
 #include <unistd.h>
 
 static struct sysinfo si;
@@ -82,7 +87,7 @@ tt_error_t tt_platform_thread_create(tt_thread_t *thread,
     return TT_ERROR_NULL_POINTER;
   }
 
-  pthread_att_r pthread_attr;
+  pthread_attr_t pthread_attr;
   int ret = pthread_attr_init(&pthread_attr);
   if (ret != 0) {
     return TT_ERROR_THREAD_CREATE;
@@ -112,7 +117,77 @@ tt_error_t tt_platform_thread_join(tt_thread_t *thread, void **retval) {
                                                      : TT_ERROR_THREAD_JOIN;
 }
 
-tt_error_t tt_platform_thread_detach(tt_thread_t *thread) {
+/* tt_error_t tt_thread_get_state(const tt_thread_t *thread, */
+/*                                tt_thread_state_t *state); */
+
+tt_error_t tt_platform_thread_set_priority(tt_thread_t *thread,
+                                           tt_thread_priority_t priority) {
+  if (thread == NULL) {
+    return TT_ERROR_NULL_POINTER;
+  }
+  struct sched_param param;
+  int policy = SCHED_OTHER; // Use the default scheduler
+  int min_prio = sched_get_priority_min(policy);
+  int max_prio = sched_get_priority_max(policy);
+
+  // Map our priority levels to the system's priority range
+  int system_priority;
+  switch (priority) {
+  case TT_THREAD_PRIORITY_LOW:
+    system_priority = min_prio;
+    break;
+  case TT_THREAD_PRIORITY_NORMAL:
+    system_priority = min_prio + (max_prio - min_prio) / 3;
+    break;
+  case TT_THREAD_PRIORITY_HIGH:
+    system_priority = min_prio + 2 * (max_prio - min_prio) / 3;
+    break;
+  case TT_THREAD_PRIORITY_REALTIME:
+    system_priority = max_prio;
+    break;
+  default:
+    return TT_ERROR_INVALID_PARAM;
+  }
+
+  param.sched_priority = system_priority;
+  pthread_t *pthread_handle = (pthread_t *)thread->handle;
+  pthread_setschedparam(*pthread_handle, policy, &param);
+  thread->priority = priority;
+  return TT_SUCCESS;
+}
+
+tt_error_t tt_platform_thread_suspend(tt_thread_t *thread) {
+  if (thread == NULL) {
+    return TT_ERROR_NULL_POINTER;
+  }
+  // Linux doesn't have direct thread suspension
+  // TODO: See what to do about this
+  return TT_ERROR_NOT_IMPLEMENTED;
+}
+
+tt_error_t tt_platform_thread_resume(tt_thread_t *thread) {
+  if (thread == NULL) {
+    return TT_ERROR_NULL_POINTER;
+  }
+
+  // Linux doesn't have direct thread suspension
+  // TODO: See what to do about this
+  return TT_ERROR_NOT_IMPLEMENTED;
+}
+
+tt_error_t tt_platform_thread_sleep(uint32_t ms) {
+  struct timespec ts;
+  ts.tv_sec = ms / 1000;
+  ts.tv_nsec = (ms % 1000) * 1000000;
+  return (nanosleep(&ts, NULL) == 0) ? TT_SUCCESS : TT_ERROR_THREAD_SLEEP;
+}
+
+tt_thread_t *tt_platform_thread_self(void) {
+  pthread_t handle = pthread_self();
+  return tt_thread_table_find_by_handle(handle);
+}
+
+tt_error_t tt_platform_thread_destroy(tt_thread_t *thread) {
   if (thread == NULL) {
     return TT_ERROR_NULL_POINTER;
   }
@@ -120,10 +195,12 @@ tt_error_t tt_platform_thread_detach(tt_thread_t *thread) {
                                                : TT_ERROR_THREAD_DETACH;
 }
 
+// TODO: See if to implement it in tt_mutex.h
 tt_error_t tt_platform_thread_exit(void *retval) {
   pthread_exit(retval);
   return TT_SUCCESS;
 }
+
 #endif /* TT_CAP_THREADS */
 
 #ifdef TT_CAP_MUTEX

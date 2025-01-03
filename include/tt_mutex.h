@@ -9,6 +9,7 @@
 #ifndef TT_MUTEX_H_
 #define TT_MUTEX_H_
 
+#include "tt_platform.h"
 #include "tt_types.h"
 #include <stddef.h>
 
@@ -16,10 +17,10 @@
 /**
  * @brief Mutex structure for thread synchronization
  */
-typedef struct {
+struct tt_mutex_t {
   void *lock;       /**< Pointer to platform specific implementation*/
   bool initialized; /**< Initialization state*/
-} tt_mutex_t;
+};
 
 /**
  * @brief Initialize a mutex
@@ -67,10 +68,10 @@ bool tt_mutex_is_locked(tt_mutex_t *mutex);
 /**
  * @brief Mutex structure for thread synchronization
  */
-typedef struct {
+struct tt_mutex_t {
   volatile int *lock; /**< Atomic lock value*/
   bool initialized;   /**< Initialization state*/
-} tt_mutex_t;
+};
 
 /* Initial lock value */
 #define TT_MUTEX_UNLOCKED 0

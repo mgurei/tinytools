@@ -10,6 +10,7 @@
 #include "tt_platform.h"
 #include <stddef.h>
 
+// NOTE: Not the only platform to support this is linux, add more later
 #if defined(TT_TARGET_LINUX) && defined(TT_CAP_MUTEX)
 tt_error_t tt_mutex_init(tt_mutex_t *mutex) {
   return tt_platform_mutex_init(mutex);

@@ -26,12 +26,25 @@
 
 #endif
 
-#if defined(TT_CAP_THREAD) && defined(TT_TARGET_LINUX)
+#if defined(TT_CAP_THREADS) // && defined(TT_TARGET_LINUX)
 
-static const tt_thread_attr_t default_attrs = {
-    .priority = TT_THREAD_PRIORITY_NORMAL,
-    .stack_size = (8 * 1024 * 1024), // Default for Linux and bare metal
-    .name = "tt_thread"};
+/* static const tt_thread_attr_t default_attrs = { */
+/*     .priority = TT_THREAD_PRIORITY_NORMAL, */
+/*     .stack_size = (8 * 1024 * 1024), // Default for Linux and bare metal */
+/*     .name = "tt_thread"}; */
+
+/* static void *thread_start_routine(void *arg) { */
+/*   tt_thread_t *thread = (tt_thread_t *)arg; */
+/*   if (thread == NULL) { */
+/*     return NULL; */
+/*   } */
+
+/*   thread->state = TT_THREAD_STATE_RUNNING; */
+/*   thread->retval = thread->func(thread->arg); */
+/*   thread->state = TT_THREAD_STATE_TERMINATED; */
+
+/*   return thread->retval; */
+/* } */
 
 tt_error_t tt_thread_init(void) { return tt_thread_table_init(); }
 
@@ -44,6 +57,7 @@ tt_error_t tt_thread_attr_init(tt_thread_attr_t *attr) {
       .priority = TT_THREAD_PRIORITY_NORMAL,
       .stack_size = TT_DEFAULT_STACK_SIZE,
       .name = "tt_thread"};
+
   *attr = default_attrs;
   return TT_SUCCESS;
 }
@@ -99,6 +113,7 @@ tt_error_t tt_thread_get_state(const tt_thread_t *thread,
 
 tt_error_t tt_thread_set_priority(tt_thread_t *thread,
                                   tt_thread_priority_t priority) {
+
   return tt_platform_thread_set_priority(thread, priority);
 }
 
@@ -110,9 +125,7 @@ tt_error_t tt_thread_resume(tt_thread_t *thread) {
   return tt_platform_thread_resume(thread);
 }
 
-tt_error_t tt_thread_spleep(uint32_t ms) {
-  return tt_platform_thread_sleep(ms);
-}
+tt_error_t tt_thread_sleep(uint32_t ms) { return tt_platform_thread_sleep(ms); }
 
 tt_thread_t *tt_thread_self(void) { return tt_platform_thread_self(); }
 
@@ -120,7 +133,7 @@ tt_error_t tt_thread_destroy(tt_thread_t *thread) {
   return tt_platform_thread_destroy(thread);
 }
 
-#elif (TT_TARGET_FREERTOS) // TODO: organize code below per platform!
+#elif defined(TT_UNUSED_CODE) // TODO: organize code below per platform!
 
 /* Platform-specific includes */
 #if defined(TT_TARGET_LINUX)

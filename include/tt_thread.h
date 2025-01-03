@@ -10,10 +10,12 @@
 #define TT_THREAD_H_
 
 #include "tt_platform.h"
-#include "tt_thread_enum.h"
 #include "tt_types.h"
 
 #if defined(TT_CAP_THREADS)
+#include "tt_thread_enum.h"
+#include "tt_thread_internal.h"
+
 /**
  * @brief Thread attributes
  */
@@ -124,11 +126,67 @@ tt_error_t tt_thread_destroy(tt_thread_t *thread);
 /**
  * @brief Dummy thread struct
  */
-typedef struct {
+struct tt_thread_t {
   int dummy; /**< Dummy field for platforms without thread support*/
-} tt_thread_t;
+};
 
-// TODO: Add non functionality func
+struct tt_thread_attr_t {
+  int dummy; /**< Dummy field for platforms without thread support*/
+};
+
+typedef enum { DUMMY_PRIORITY } tt_thread_priority_t;
+typedef enum { DUMMY_STATE } tt_thread_state_t;
+
+// Dummy functions
+typedef void *(*tt_thread_func_t)(void *arg);
+
+static inline tt_error_t tt_thread_init(void) {
+  return TT_ERROR_NOT_IMPLEMENTED;
+}
+static inline tt_error_t tt_thread_attr_init(tt_thread_attr_t *attr
+                                             __attribute__((unused))) {
+  return TT_ERROR_NOT_IMPLEMENTED;
+}
+static inline tt_error_t
+tt_thread_create(tt_thread_t **thread __attribute__((unused)),
+                 const tt_thread_attr_t *attr __attribute__((unused)),
+                 tt_thread_func_t func __attribute__((unused)),
+                 void *arg __attribute__((unused))) {
+  return TT_ERROR_NOT_IMPLEMENTED;
+}
+static inline tt_error_t tt_thread_join(tt_thread_t *thread
+                                        __attribute__((unused)),
+                                        void **retval __attribute__((unused))) {
+  return TT_ERROR_NOT_IMPLEMENTED;
+}
+static inline tt_error_t tt_thread_get_state(const tt_thread_t *thread
+                                             __attribute__((unused)),
+                                             tt_thread_state_t *state
+                                             __attribute__((unused))) {
+  return TT_ERROR_NOT_IMPLEMENTED;
+}
+static inline tt_error_t tt_thread_set_priority(tt_thread_t *thread
+                                                __attribute__((unused)),
+                                                tt_thread_priority_t priority
+                                                __attribute__((unused))) {
+  return TT_ERROR_NOT_IMPLEMENTED;
+}
+static inline tt_error_t tt_thread_suspend(tt_thread_t *thread
+                                           __attribute__((unused))) {
+  return TT_ERROR_NOT_IMPLEMENTED;
+}
+static inline tt_error_t tt_thread_resume(tt_thread_t *thread
+                                          __attribute__((unused))) {
+  return TT_ERROR_NOT_IMPLEMENTED;
+}
+static inline tt_error_t tt_thread_sleep(uint32_t ms __attribute__((unused))) {
+  return TT_ERROR_NOT_IMPLEMENTED;
+}
+static inline tt_thread_t *tt_thread_self(void) { return NULL; }
+static inline tt_error_t tt_thread_destroy(tt_thread_t *thread
+                                           __attribute__((unused))) {
+  return TT_ERROR_NOT_IMPLEMENTED;
+}
 
 #endif /* TT_CAP_THREADS */
 

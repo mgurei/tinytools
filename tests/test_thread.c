@@ -7,11 +7,18 @@
  */
 
 #include "tt_atomic.h"
+#include "tt_mutex.h"
+#include "tt_platform.h"
 #include "tt_test.h"
+#include "tt_thread.h"
 #include "tt_thread_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
 
+// DEBUG PRINTS ON/OFF
+#define TEST_THREAD_PRINT 0
+
+#if defined(TT_CAP_THREADS)
 /* Test data structures */
 static tt_atomic_int_t shared_counter;
 static const int ITERATIONS = 1000;
@@ -41,6 +48,7 @@ static void test_setup(void) {
   }
 }
 
+#if (TEST_THREAD_PRINT == 1)
 void tt_thread_table_print_status(void) {
   printf("\nThread Table Status\n");
   printf("----------------------------------------\n");
@@ -60,6 +68,7 @@ void tt_thread_table_print_status(void) {
   tt_mutex_unlock(&g_thread_table_mutex);
   printf("----------------------------------------\n\n");
 }
+#endif /* TEST_THREAD_PRINT */
 
 /* Test cases */
 TT_TEST(test_thread_attr_init) {
@@ -82,27 +91,40 @@ TT_TEST(test_thread_create_destroy) {
   void *retval;
   tt_error_t result = tt_thread_create(&thread, NULL, increment_counter, NULL);
 
-  /* printf("\nAfter thread creation:\n"); */
-  /* printf("Direct thread state: %d\n", thread->state); */
-  /* tt_thread_table_print_status(); */
+#if (TEST_THREAD_PRINT == 1)
+  printf("\nAfter thread creation:\n");
+  printf("Direct thread state: %d\n", thread->state);
+  tt_thread_table_print_status();
+#endif /* TEST_THREAD_PRINT */
 
   TT_ASSERT_EQUAL(TT_SUCCESS, result, "%d");
   TT_ASSERT(thread != NULL);
 
   result = tt_thread_join(thread, &retval);
 
-  /* printf("\nAfter thread join:\n"); */
-  /* printf("Direct thread state: %d\n", thread->state); */
-  /* tt_thread_table_print_status(); */
+#if (TEST_THREAD_PRINT == 1)
+  printf("\nAfter thread join:\n");
+  printf("Direct thread state: %d\n", thread->state);
+  tt_thread_table_print_status();
+#endif /* TEST_THREAD_PRINT */
 
   TT_ASSERT_EQUAL(TT_SUCCESS, result, "%d");
   TT_ASSERT_EQUAL(ITERATIONS, (int)((uintptr_t)retval), "%d");
 
-  /* printf("\nBefore thread destroy:\n"); */
-  /* printf("Direct thread state: %d\n", thread->state); */
-  /* tt_thread_table_print_status(); */
+#if (TEST_THREAD_PRINT == 1)
+  printf("\nBefore thread destroy:\n");
+  printf("Direct thread state: %d\n", thread->state);
+  tt_thread_table_print_status();
+#endif /* TEST_THREAD_PRINT */
 
   result = tt_thread_destroy(thread);
+
+#if (TEST_THREAD_PRINT == 1)
+  printf("\nAfter thread creation:\n");
+  printf("Direct thread state: %d\n", thread->state);
+  tt_thread_table_print_status();
+#endif /* TEST_THREAD_PRINT */
+
   TT_ASSERT_EQUAL(TT_SUCCESS, result, "%d");
   return true;
 }
@@ -207,16 +229,21 @@ TT_TEST(test_thread_state) {
   return true;
 }
 
+#endif /* TT_CAP_THREADS */
 /* Test suite main function */
 int main(void) {
   TT_TEST_START("Thread API Test Suite");
 
+#if defined(TT_CAP_THREADS)
   TT_RUN_TEST(test_thread_attr_init);
   TT_RUN_TEST(test_thread_create_destroy);
   TT_RUN_TEST(test_thread_concurrent_execution);
   TT_RUN_TEST(test_thread_sleep);
   TT_RUN_TEST(test_thread_priority);
   TT_RUN_TEST(test_thread_state);
+#else
+  printf("Thread capability inactive. Add -DTT_CAP_THREADS to activate it.\n");
+#endif /* TT_CAP_THREADS */
 
   TT_TEST_END();
   return 0;

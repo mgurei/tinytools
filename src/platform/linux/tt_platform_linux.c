@@ -103,6 +103,8 @@ tt_error_t tt_platform_thread_create(tt_thread_t *thread,
     }
   }
 
+  thread->state = TT_THREAD_STATE_CREATED;
+
   ret = pthread_create(&thread->handle, &pthread_attr, func, arg);
   pthread_attr_destroy(&pthread_attr);
 
@@ -113,8 +115,15 @@ tt_error_t tt_platform_thread_join(tt_thread_t *thread, void **retval) {
   if (thread == NULL) {
     return TT_ERROR_NULL_POINTER;
   }
-  return (pthread_join(thread->handle, retval) == 0) ? TT_SUCCESS
-                                                     : TT_ERROR_THREAD_JOIN;
+
+  int result = pthread_join(thread->handle, retval);
+  if (result == 0) {
+    thread->state = TT_THREAD_STATE_TERMINATED;
+    thread->is_active = false;
+    return TT_SUCCESS;
+  } else {
+    return TT_ERROR_THREAD_JOIN;
+  }
 }
 
 /* tt_error_t tt_thread_get_state(const tt_thread_t *thread, */
@@ -191,8 +200,29 @@ tt_error_t tt_platform_thread_destroy(tt_thread_t *thread) {
   if (thread == NULL) {
     return TT_ERROR_NULL_POINTER;
   }
-  return (pthread_detach(thread->handle) == 0) ? TT_SUCCESS
-                                               : TT_ERROR_THREAD_DETACH;
+
+  if (thread->state != TT_THREAD_STATE_TERMINATED) {
+    return TT_ERROR_THREAD_ACTIVE;
+  }
+
+  tt_error_t result = tt_thread_table_unregister(thread);
+  if (result != TT_SUCCESS) {
+    return result;
+  }
+
+  // Detach the thread handle if it is still active
+  if (thread->is_active) {
+    int detach_result = pthread_detach(thread->handle);
+    if (detach_result != 0) {
+#include <stdio.h>
+      printf("ERROR code pthread_detach: %d\n", detach_result);
+      return TT_ERROR_THREAD_DETACH;
+    }
+    thread->is_active = false; // Mark thread as detached
+  }
+
+  free(thread);
+  return TT_SUCCESS;
 }
 
 // TODO: See if to implement it in tt_mutex.h
